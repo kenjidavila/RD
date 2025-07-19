@@ -50,7 +50,9 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
       const result = await response.json()
       console.log("📥 Respuesta login:", result)
 
-      if (result.success) {
+      if (result.error) {
+        setError(result.error)
+      } else {
         console.log("✅ Login exitoso")
 
         // Guardar datos del usuario en localStorage
@@ -62,8 +64,6 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
         // Redirigir al dashboard
         router.push("/dashboard")
         router.refresh()
-      } else {
-        setError(result.message || "Error en el inicio de sesión")
       }
     } catch (error) {
       console.error("💥 Error:", error)
