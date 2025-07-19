@@ -1,9 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/lib/supabase-server"
+import { createAdminClient, validateServerConfig } from "@/lib/supabase-server"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
+    const { valid, errors } = validateServerConfig()
+    if (!valid) {
+      return NextResponse.json(
+        { error: `Configuración del servidor inválida: ${errors.join(", ")}` },
+        { status: 500 },
+      )
+    }
+
     const supabase = createAdminClient()
     const { email, password, nombre, rnc, razonSocial } = await request.json()
 
