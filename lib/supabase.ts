@@ -152,3 +152,6 @@ export function getClient() {
 export function clearClientInstance() {
   clientInstance = null
 }
+
+// Named export for compatibility
+export const supabase = createClient()
