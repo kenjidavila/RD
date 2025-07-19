@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="TipoMonedaType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="BRL">
+        <xs:annotation>
+          <xs:documentation>REAL BRASILENO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="CAD">
+        <xs:annotation>
+          <xs:documentation>DOLAR CANADIENSE</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="CHF">
+        <xs:annotation>
+          <xs:documentation>FRANCO SUIZO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="CHY">
+        <xs:annotation>
+          <xs:documentation>YUAN CHINO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="XDR">
+        <xs:annotation>
+          <xs:documentation>DERECHO ESPECIAL DE GIRO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="DKK">
+        <xs:annotation>
+          <xs:documentation>CORONA DANESA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="EUR">
+        <xs:annotation>
+          <xs:documentation>EURO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="GBP">
+        <xs:annotation>
+          <xs:documentation>LIBRA ESTERLINA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="JPY">
+        <xs:annotation>
+          <xs:documentation>YEN JAPONES</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="NOK">
+        <xs:annotation>
+          <xs:documentation>CORONA NORUEGA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SCP">
+        <xs:annotation>
+          <xs:documentation>LIBRA ESCOCESA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SEK">
+        <xs:annotation>
+          <xs:documentation>CORONA SUECA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="USD">
+        <xs:annotation>
+          <xs:documentation>DOLAR ESTADOUNIDENSE</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="VEF">
+        <xs:annotation>
+          <xs:documentation>BOLIVAR FUERTE VENEZOLANO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="HTG">
+        <xs:annotation>
+          <xs:documentation>GURDA HAITIANA</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="MXN">
+        <xs:annotation>
+          <xs:documentation>PESO MEXICANO</xs:documentation>
+        </xs:annotation>
+      </xs:enumeration>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>

@@ -1,0 +1,299 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react"
+import { createClient } from "@/lib/supabase"
+import { logger } from "@/lib/logger"
+import type { CertificadoDigital } from "@/types/database"
+
+interface CertificadosDigitalesProps {
+  empresaId: string
+}
+
+export default function CertificadosDigitales({ empresaId }: CertificadosDigitalesProps) {
+  const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
+  const [loading, setLoading] = useState(true)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const supabase = createClient()
+
+  useEffect(() => {
+    cargarCertificados()
+  }, [empresaId])
+
+  const cargarCertificados = async () => {
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from("certificados_digitales")
+        .select("*")
+        .eq("empresa_id", empresaId)
+        .order("created_at", { ascending: false })
+
+      if (error) throw error
+
+      setCertificados(data || [])
+      logger.info("Certificados cargados", { empresaId, count: data?.length })
+    } catch (error) {
+      logger.error("Error cargando certificados", { error, empresaId })
+      setError("Error al cargar certificados digitales")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const subirCertificado = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validar tipo de archivo
+    const allowedTypes = [".p12", ".pfx", ".pem", ".crt"]
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf("."))
+
+    if (!allowedTypes.includes(fileExtension)) {
+      setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt")
+      return
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError("El archivo es demasiado grande. Máximo 5MB permitido")
+      return
+    }
+
+    try {
+      setUploading(true)
+      setError(null)
+
+      // Subir archivo a Supabase Storage
+      const fileName = `${empresaId}/${Date.now()}-${file.name}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("certificados")
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      // Obtener URL pública del archivo
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("certificados").getPublicUrl(fileName)
+
+      // Guardar información del certificado en la base de datos
+      const { error: dbError } = await supabase.from("certificados_digitales").insert({
+        empresa_id: empresaId,
+        nombre: file.name,
+        archivo_url: publicUrl,
+        fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 año por defecto
+        activo: true,
+      })
+
+      if (dbError) throw dbError
+
+      setSuccess("Certificado digital subido exitosamente")
+      await cargarCertificados()
+
+      // Limpiar input
+      event.target.value = ""
+
+      logger.info("Certificado digital subido", { empresaId, fileName })
+    } catch (error) {
+      logger.error("Error subiendo certificado", { error, empresaId })
+      setError("Error al subir certificado digital")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const eliminarCertificado = async (certificado: CertificadoDigital) => {
+    if (!confirm("¿Está seguro de eliminar este certificado digital?")) return
+
+    try {
+      // Eliminar archivo de storage
+      const fileName = certificado.archivo_url.split("/").pop()
+      if (fileName) {
+        await supabase.storage.from("certificados").remove([`${empresaId}/${fileName}`])
+      }
+
+      // Eliminar registro de base de datos
+      const { error } = await supabase.from("certificados_digitales").delete().eq("id", certificado.id)
+
+      if (error) throw error
+
+      setSuccess("Certificado eliminado exitosamente")
+      await cargarCertificados()
+
+      logger.info("Certificado eliminado", { empresaId, certificadoId: certificado.id })
+    } catch (error) {
+      logger.error("Error eliminando certificado", { error, empresaId })
+      setError("Error al eliminar certificado")
+    }
+  }
+
+  const descargarCertificado = async (certificado: CertificadoDigital) => {
+    try {
+      const response = await fetch(certificado.archivo_url)
+      const blob = await response.blob()
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = certificado.nombre
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      logger.info("Certificado descargado", { empresaId, certificadoId: certificado.id })
+    } catch (error) {
+      logger.error("Error descargando certificado", { error, empresaId })
+      setError("Error al descargar certificado")
+    }
+  }
+
+  const estaVencido = (fecha: string) => {
+    return new Date(fecha) < new Date()
+  }
+
+  const diasParaVencer = (fecha: string) => {
+    const fechaVencimiento = new Date(fecha)
+    const hoy = new Date()
+    const diferencia = fechaVencimiento.getTime() - hoy.getTime()
+    return Math.ceil(diferencia / (1000 * 3600 * 24))
+  }
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Certificados Digitales</CardTitle>
+          <CardDescription>Gestione los certificados digitales para la firma de comprobantes fiscales</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Certificados Digitales</CardTitle>
+        <CardDescription>Gestione los certificados digitales para la firma de comprobantes fiscales</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {error && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {success && (
+          <Alert>
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{success}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Subir nuevo certificado */}
+        <div className="space-y-4">
+          <Label htmlFor="certificado-upload">Subir Nuevo Certificado</Label>
+          <div className="flex items-center space-x-4">
+            <Input
+              id="certificado-upload"
+              type="file"
+              accept=".p12,.pfx,.pem,.crt"
+              onChange={subirCertificado}
+              disabled={uploading}
+              className="flex-1"
+            />
+            <Button disabled={uploading}>
+              <Upload className="h-4 w-4 mr-2" />
+              {uploading ? "Subiendo..." : "Subir"}
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500">Formatos soportados: .p12, .pfx, .pem, .crt (máximo 5MB)</p>
+        </div>
+
+        {/* Lista de certificados */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Certificados Existentes</h3>
+
+          {certificados.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No hay certificados digitales configurados</div>
+          ) : (
+            <div className="space-y-3">
+              {certificados.map((certificado) => (
+                <div key={certificado.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <h4 className="font-medium">{certificado.nombre}</h4>
+                      {certificado.activo ? (
+                        estaVencido(certificado.fecha_vencimiento) ? (
+                          <Badge variant="destructive">Vencido</Badge>
+                        ) : diasParaVencer(certificado.fecha_vencimiento) <= 30 ? (
+                          <Badge variant="secondary">Por vencer</Badge>
+                        ) : (
+                          <Badge variant="default">Activo</Badge>
+                        )
+                      ) : (
+                        <Badge variant="outline">Inactivo</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Vence: {new Date(certificado.fecha_vencimiento).toLocaleDateString()}
+                      {diasParaVencer(certificado.fecha_vencimiento) > 0 && (
+                        <span className="ml-2">({diasParaVencer(certificado.fecha_vencimiento)} días restantes)</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Subido: {new Date(certificado.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => descargarCertificado(certificado)}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => eliminarCertificado(certificado)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Información adicional */}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-900 mb-2">Información Importante</h4>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• Los certificados digitales son necesarios para firmar los comprobantes fiscales</li>
+            <li>• Asegúrese de que el certificado esté vigente y sea válido para uso fiscal</li>
+            <li>• Mantenga una copia de seguridad de sus certificados en un lugar seguro</li>
+            <li>• Renueve sus certificados antes de que venzan para evitar interrupciones</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
