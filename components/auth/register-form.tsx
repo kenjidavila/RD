@@ -103,12 +103,12 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
       const result = await response.json()
       console.log("📥 Response:", result)
 
-      if (result.success) {
+      if (result.error) {
+        setErrors({ general: result.error })
+      } else {
         console.log("✅ Registro exitoso")
         alert("¡Registro exitoso! Ya puedes iniciar sesión con tus credenciales.")
         onBackToLogin()
-      } else {
-        setErrors({ general: result.message || "Error en el registro" })
       }
     } catch (error) {
       console.error("💥 Error en registro:", error)
