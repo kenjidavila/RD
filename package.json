@@ -1,6 +1,6 @@
 {
   "name": "facturacion-electronica-rd",
-  "version": "2.3.0",
+  "version": "2.6.1",
   "private": true,
   "description": "Sistema de Facturación Electrónica para República Dominicana - Cumple con normativas DGII para e-CF",
   "keywords": [

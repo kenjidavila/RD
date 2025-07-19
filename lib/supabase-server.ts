@@ -116,3 +116,6 @@ export function validateServerConfig() {
     errors,
   }
 }
+
+// Export alias for createAdminClient
+export const createAdminClient = getSupabaseAdminClient
