@@ -1,29 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['jspdf', 'qrcode'],
-  },
+  serverExternalPackages: ["jspdf", "qrcode"],
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: '*.supabase.co',
-        port: '',
-        pathname: '/storage/v1/object/public/**',
+        protocol: "https",
+        hostname: "*.supabase.co",
+        port: "",
+        pathname: "/storage/v1/object/public/**",
       },
       {
         protocol: 'https',
         hostname: 'placeholder.svg',
-        port: '',
-        pathname: '/**',
+        port: "",
+        pathname: "/**",
       },
     ],
     unoptimized: true,
   },
   env: {
-    NEXT_PUBLIC_APP_VERSION: '2.1.0',
-    NEXT_PUBLIC_APP_NAME: 'Sistema e-CF RD',
-    NEXT_PUBLIC_APP_DESCRIPTION: 'Sistema de Facturación Electrónica para República Dominicana',
+    NEXT_PUBLIC_APP_VERSION: "2.1.0",
+    NEXT_PUBLIC_APP_NAME: "Sistema e-CF RD",
+    NEXT_PUBLIC_APP_DESCRIPTION: "Sistema de Facturación Electrónica para República Dominicana",
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -39,7 +37,7 @@ const nextConfig = {
     // Optimización para PDF generation
     config.externals = config.externals || []
     if (isServer) {
-      config.externals.push('canvas')
+      config.externals.push("canvas")
     }
 
     return config
@@ -47,19 +45,19 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: "/api/:path*",
         headers: [
           {
-            key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'development' ? '*' : process.env.NEXT_PUBLIC_APP_URL || '',
+            key: "Access-Control-Allow-Origin",
+            value: process.env.NODE_ENV === "development" ? "*" : process.env.NEXT_PUBLIC_APP_URL || "",
           },
           {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, DELETE, OPTIONS',
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
           },
           {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization',
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
           },
         ],
       },
@@ -68,8 +66,8 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/',
-        destination: '/dashboard',
+        source: "/",
+        destination: "/dashboard",
         permanent: false,
       },
     ]

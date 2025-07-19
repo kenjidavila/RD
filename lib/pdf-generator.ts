@@ -194,7 +194,7 @@ export class PDFGenerator {
       this.formatCurrency(item.subtotal),
     ])
 
-    // @ts-ignore - jsPDF autoTable types
+    // @ts-expect-error jsPDF autoTable has incomplete types
     this.doc.autoTable({
       head: [tableColumns],
       body: tableRows,
@@ -219,7 +219,7 @@ export class PDFGenerator {
       },
     })
 
-    // @ts-ignore
+    // @ts-expect-error jsPDF lastAutoTable not typed
     return this.doc.lastAutoTable.finalY + 10
   }
 

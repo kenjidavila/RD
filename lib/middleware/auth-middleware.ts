@@ -81,13 +81,14 @@ export async function withAuth(
   }
 }
 
+import crypto from "crypto"
+
 function hashToken(token: string): string {
-  const crypto = require("crypto")
   return crypto.createHash("sha256").update(token).digest("hex")
 }
 
 export function requireRole(allowedRoles: string[]) {
-  return (request: NextRequest, context: AuthContext, handler: Function) => {
+  return (request: NextRequest, context: AuthContext, handler: () => Promise<NextResponse> | NextResponse) => {
     if (!allowedRoles.includes(context.userRole)) {
       logger.warn("Insufficient permissions", {
         userId: context.userId,

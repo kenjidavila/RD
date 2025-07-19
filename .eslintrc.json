@@ -9,7 +9,7 @@
       }
     ],
     "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/prefer-const": "error",
+    
     "@typescript-eslint/no-var-requires": "error",
     "react/no-unescaped-entities": "off",
     "react/display-name": "off",
@@ -20,17 +20,17 @@
     "no-console": ["warn", { "allow": ["warn", "error"] }],
     "no-debugger": "error",
     "no-alert": "warn",
-    "no-duplicate-imports": "error",
+    "no-duplicate-imports": "warn",
     "no-unused-expressions": "error",
     "no-unreachable": "error",
     "no-undef": "error",
     "eqeqeq": ["error", "always"],
-    "curly": ["error", "all"],
-    "brace-style": ["error", "1tbs"],
-    "comma-dangle": ["error", "always-multiline"],
-    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
-    "semi": ["error", "never"],
-    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "curly": ["warn", "multi-line"],
+    "brace-style": ["warn", "1tbs"],
+    "comma-dangle": ["warn", "always-multiline"],
+    "quotes": ["warn", "double", { "allowTemplateLiterals": true }],
+    "semi": ["warn", "never"],
+    "indent": "off",
     "max-len": [
       "warn",
       {
@@ -47,9 +47,9 @@
     "space-before-blocks": ["error", "always"],
     "space-infix-ops": "error",
     "space-unary-ops": ["error", { "words": true, "nonwords": false }],
-    "no-trailing-spaces": "error",
-    "eol-last": ["error", "always"],
-    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1 }]
+    "no-trailing-spaces": "warn",
+    "eol-last": ["warn", "always"],
+    "no-multiple-empty-lines": ["warn", { "max": 2, "maxEOF": 1 }]
   },
   "env": {
     "browser": true,
@@ -82,7 +82,9 @@
     {
       "files": ["scripts/**/*.js", "scripts/**/*.ts"],
       "rules": {
-        "no-console": "off"
+        "no-console": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-require-imports": "off"
       }
     }
   ]

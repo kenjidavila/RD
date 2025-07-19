@@ -1,3 +1,4 @@
+import type { RequestInit } from "undici-types"
 // Cliente HTTP para llamadas desde frontend a API Routes
 export class ApiClient {
   private baseUrl: string
