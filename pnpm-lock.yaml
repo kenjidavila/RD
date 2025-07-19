@@ -156,6 +156,9 @@ importers:
         specifier: ^3.22.4
         version: 3.24.1
     devDependencies:
+      '@testing-library/dom':
+        specifier: ^10.4.0
+        version: 10.4.0
       '@testing-library/jest-dom':
         specifier: ^6.6.3
         version: 6.6.3
