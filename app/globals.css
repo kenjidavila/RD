@@ -5,25 +5,25 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
-    --primary: 215 20% 65%;
-    --primary-foreground: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
-    --secondary-foreground: 215 25% 27%;
+    --secondary-foreground: 222.2 84% 4.9%;
     --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96%;
-    --accent-foreground: 215 25% 27%;
+    --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 215 20% 65%;
-    --radius: 0.75rem;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -38,8 +38,8 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
@@ -50,7 +50,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --ring: 224.3 76.3% 94.1%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -64,288 +64,374 @@
     @apply border-border;
   }
   body {
-    @apply bg-gradient-to-br from-slate-50 via-white to-slate-100 text-foreground min-h-screen;
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-}
 
-/* Custom scrollbar styles - Crystal effect */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 6px;
-  backdrop-filter: blur(4px);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.3);
-}
-
-/* Print styles */
-@media print {
-  .no-print {
-    display: none !important;
+  /* Mejoras de tipografía */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
   }
 
-  .print-break {
-    page-break-after: always;
+  h1 {
+    @apply text-4xl lg:text-5xl;
   }
 
-  .print-avoid-break {
-    page-break-inside: avoid;
+  h2 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h3 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h4 {
+    @apply text-xl lg:text-2xl;
+  }
+
+  /* Estilos para formularios */
+  .form-group {
+    @apply space-y-2;
+  }
+
+  .form-label {
+    @apply text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
+  }
+
+  .form-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .form-textarea {
+    @apply flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Estilos para tablas */
+  .table-container {
+    @apply relative w-full overflow-auto;
+  }
+
+  .table {
+    @apply w-full caption-bottom text-sm;
+  }
+
+  .table-header {
+    @apply border-b;
+  }
+
+  .table-header-row {
+    @apply border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+  }
+
+  .table-head {
+    @apply h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0;
+  }
+
+  .table-body {
+    @apply [&_tr:last-child]:border-0;
+  }
+
+  .table-row {
+    @apply border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+  }
+
+  .table-cell {
+    @apply p-4 align-middle [&:has([role=checkbox])]:pr-0;
+  }
+
+  /* Estilos para estados de comprobantes */
+  .status-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .status-draft {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  .status-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  .status-approved {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .status-rejected {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .status-cancelled {
+    @apply bg-gray-100 text-gray-800;
+  }
+
+  /* Estilos para notificaciones */
+  .notification-success {
+    @apply bg-green-50 border-green-200 text-green-800;
+  }
+
+  .notification-error {
+    @apply bg-red-50 border-red-200 text-red-800;
+  }
+
+  .notification-warning {
+    @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+  }
+
+  .notification-info {
+    @apply bg-blue-50 border-blue-200 text-blue-800;
+  }
+
+  /* Animaciones personalizadas */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .pulse-ring {
+    animation: pulseRing 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulseRing {
+    0% {
+      transform: scale(0.33);
+    }
+    40%,
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.33);
+    }
+  }
+
+  /* Estilos para impresión */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    .print-break-before {
+      page-break-before: always;
+    }
+
+    .print-break-after {
+      page-break-after: always;
+    }
+
+    .print-break-inside-avoid {
+      page-break-inside: avoid;
+    }
+
+    body {
+      -webkit-print-color-adjust: exact;
+      color-adjust: exact;
+    }
+  }
+
+  /* Estilos para accesibilidad */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* Focus visible para mejor accesibilidad */
+  .focus-visible:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2;
+  }
+
+  /* Estilos para elementos interactivos */
+  .interactive {
+    @apply transition-all duration-200 ease-in-out;
+  }
+
+  .interactive:hover {
+    @apply scale-105;
+  }
+
+  .interactive:active {
+    @apply scale-95;
+  }
+
+  /* Estilos para loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted rounded;
+  }
+
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-muted border-t-primary;
+  }
+
+  /* Estilos para tooltips */
+  .tooltip {
+    @apply absolute z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md;
+  }
+
+  /* Estilos para modales */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 bg-background/80 backdrop-blur-sm;
+  }
+
+  .modal-content {
+    @apply fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg;
+  }
+
+  /* Estilos específicos para el sistema e-CF */
+  .ecf-header {
+    @apply bg-gradient-to-r from-dgii-primary to-blue-600 text-white;
+  }
+
+  .ecf-card {
+    @apply bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .ecf-button-primary {
+    @apply bg-dgii-primary hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200;
+  }
+
+  .ecf-button-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium py-2 px-4 rounded-md transition-colors duration-200;
+  }
+
+  .ecf-input {
+    @apply border-gray-300 focus:border-dgii-primary focus:ring-dgii-primary;
+  }
+
+  .ecf-table-header {
+    @apply bg-gray-50 text-gray-700 font-semibold;
+  }
+
+  .ecf-status-indicator {
+    @apply w-3 h-3 rounded-full;
+  }
+
+  .ecf-status-approved {
+    @apply bg-ecf-approved;
+  }
+
+  .ecf-status-pending {
+    @apply bg-ecf-pending;
+  }
+
+  .ecf-status-rejected {
+    @apply bg-ecf-rejected;
+  }
+
+  .ecf-status-draft {
+    @apply bg-ecf-draft;
   }
 }
 
-/* Animation utilities */
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
-
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
-}
-
-/* Custom focus styles - Crystal effect */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/30;
-}
-
-/* Loading spinner - Crystal style */
-.spinner {
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top: 2px solid rgba(100, 116, 139, 0.6);
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
-  backdrop-filter: blur(4px);
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Crystal button styles */
-.btn-crystal {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 hover:bg-white/80 text-gray-700 shadow-glass hover:shadow-glass-lg transition-all duration-300;
-}
-
-.btn-crystal-blue {
-  @apply bg-gradient-crystal-blue backdrop-blur-md border border-crystal-blue-200/30 hover:bg-crystal-blue-50/80 text-crystal-blue-800 shadow-blue-crystal hover:shadow-crystal transition-all duration-300;
-}
-
-.btn-crystal-red {
-  @apply bg-gradient-crystal-red backdrop-blur-md border border-crystal-red-200/30 hover:bg-crystal-red-50/80 text-crystal-red-800 shadow-red-crystal hover:shadow-crystal transition-all duration-300;
-}
-
-/* Form styles - Crystal effect */
-.form-input {
-  @apply w-full px-4 py-3 bg-white/60 backdrop-blur-md border border-white/30 text-gray-700 rounded-xl focus-ring transition-all duration-200 placeholder:text-gray-400;
-}
-
-.form-label {
-  @apply text-sm font-medium text-gray-600;
-}
-
-.form-error {
-  @apply text-sm text-red-600 mt-1;
-}
-
-/* Card styles - Crystal effect */
-.card-crystal {
-  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-crystal rounded-2xl;
-}
-
-.card-glass {
-  @apply bg-white/80 backdrop-blur-sm border border-white/30 shadow-glass rounded-2xl;
-}
-
-/* Status badges - Crystal Dominican colors */
-.status-success {
-  @apply bg-green-50/80 backdrop-blur-sm text-green-700 border border-green-200/50 rounded-full px-3 py-1;
-}
-
-.status-warning {
-  @apply bg-yellow-50/80 backdrop-blur-sm text-yellow-700 border border-yellow-200/50 rounded-full px-3 py-1;
-}
-
-.status-error {
-  @apply bg-red-50/80 backdrop-blur-sm text-red-700 border border-red-200/50 rounded-full px-3 py-1;
-}
-
-.status-info {
-  @apply bg-blue-50/80 backdrop-blur-sm text-blue-700 border border-blue-200/50 rounded-full px-3 py-1;
-}
-
-/* Table styles - Crystal effect */
-.table-responsive {
-  @apply overflow-x-auto;
-}
-
-.table-striped tbody tr:nth-child(even) {
-  @apply bg-white/30;
-}
-
-.table-crystal {
-  @apply bg-white/70 backdrop-blur-md rounded-2xl shadow-crystal overflow-hidden border border-white/20;
-}
-
-/* Mobile responsive utilities */
-@media (max-width: 640px) {
-  .mobile-full {
-    @apply w-full;
+/* Estilos para componentes específicos */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
   }
 
-  .mobile-hidden {
-    @apply hidden;
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
   }
 
-  .mobile-stack {
-    @apply flex-col space-y-2 space-x-0;
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .btn-destructive {
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+  }
+
+  .btn-outline {
+    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-ghost {
+    @apply hover:bg-accent hover:text-accent-foreground;
+  }
+
+  .btn-link {
+    @apply text-primary underline-offset-4 hover:underline;
+  }
+
+  .btn-sm {
+    @apply h-9 rounded-md px-3;
+  }
+
+  .btn-lg {
+    @apply h-11 rounded-md px-8;
+  }
+
+  .btn-icon {
+    @apply h-10 w-10;
   }
 }
 
-/* Glass morphism utilities */
-.glass {
-  @apply bg-white/70 backdrop-blur-md border border-white/20;
-}
-
-.glass-dark {
-  @apply bg-gray-900/70 backdrop-blur-md border border-gray-700/20;
-}
-
-.glass-blue {
-  @apply bg-crystal-blue-50/40 backdrop-blur-md border border-crystal-blue-200/30;
-}
-
-.glass-red {
-  @apply bg-crystal-red-50/40 backdrop-blur-md border border-crystal-red-200/30;
-}
-
-/* Shimmer effect for loading states */
-.shimmer {
-  position: relative;
-  overflow: hidden;
-}
-
-.shimmer::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-  animation: glass-shine 3s infinite;
-}
-
-/* Print-specific styles for invoices */
-@media print {
-  @page {
-    margin: 0.5in;
-    size: letter;
+/* Utilidades personalizadas */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 
-  .invoice-header {
-    @apply border-b-2 border-gray-300 pb-4 mb-4;
+  .bg-grid {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 
-  .invoice-footer {
-    @apply border-t-2 border-gray-300 pt-4 mt-4;
+  .bg-dots {
+    background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 
-  .invoice-table {
-    @apply w-full border-collapse;
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent;
   }
 
-  .invoice-table th,
-  .invoice-table td {
-    @apply border border-gray-300 px-2 py-1 text-sm;
+  .glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
   }
 
-  .invoice-table th {
-    @apply bg-gray-100 font-semibold;
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
-}
 
-/* Dominican crystal accents */
-.accent-dominican-crystal {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.border-dominican-crystal {
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.1), 0 0 0 2px rgba(239, 68, 68, 0.1);
-}
-
-/* Crystal notifications */
-.notification-crystal {
-  @apply bg-white/80 backdrop-blur-md border border-white/30 shadow-crystal rounded-2xl p-4;
-}
-
-/* Floating action button - Crystal style */
-.fab-crystal {
-  @apply fixed bottom-6 right-6 w-14 h-14 bg-white/70 backdrop-blur-md text-gray-700 rounded-full shadow-crystal flex items-center justify-center hover:shadow-crystal-lg transition-all duration-300 z-50 border border-white/20;
-}
-
-/* Navigation styles - Crystal */
-.nav-crystal {
-  @apply bg-white/80 backdrop-blur-md border-b border-white/30;
-}
-
-.nav-item-crystal {
-  @apply px-4 py-2 rounded-xl text-gray-700 hover:bg-white/50 transition-all duration-200;
-}
-
-.nav-item-active {
-  @apply bg-white/60 backdrop-blur-md text-gray-800 font-medium shadow-glass border border-white/30;
-}
-
-/* Special crystal effects */
-.crystal-shine {
-  position: relative;
-  overflow: hidden;
-}
-
-.crystal-shine::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: glass-shine 3s ease-in-out infinite;
-}
-
-.frosted-glass {
-  @apply bg-white/50 backdrop-blur-xl border border-white/20;
-}
-
-/* Hover effects for crystal elements */
-.crystal-hover {
-  @apply hover:bg-white/80 hover:shadow-crystal-lg hover:scale-105 transition-all duration-300;
-}
-
-.crystal-blue-hover {
-  @apply hover:bg-crystal-blue-50/60 hover:shadow-blue-crystal hover:border-crystal-blue-300/40 transition-all duration-300;
-}
-
-.crystal-red-hover {
-  @apply hover:bg-crystal-red-50/60 hover:shadow-red-crystal hover:border-crystal-red-300/40 transition-all duration-300;
+  .border-gradient {
+    border-image: linear-gradient(45deg, #3b82f6, #8b5cf6) 1;
+  }
 }

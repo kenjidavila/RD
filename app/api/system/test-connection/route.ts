@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
-import { databaseValidator } from "@/lib/database-validator"
+import { getDatabaseValidator } from "@/lib/database-validator"
 
 export async function GET() {
   try {
-    const health = await databaseValidator.validateAll()
+    const validator = getDatabaseValidator()
+    const health = await validator.validateAll()
 
     const overallSuccess = Object.values(health).every((result) => result.success)
 

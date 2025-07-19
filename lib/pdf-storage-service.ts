@@ -1,6 +1,5 @@
 import { createClient } from "@/utils/supabase/server"
 
-const supabase = createClient()
 
 export interface PDFStorageRecord {
   id: string
@@ -29,6 +28,9 @@ export interface PDFStorageRecord {
 
 export class PDFStorageService {
   private static readonly BUCKET_NAME = "pdfs-temporales"
+  private static get client() {
+   return createClient()
+  }
 
   static async storePDF(
     pdfBuffer: Uint8Array,
@@ -48,6 +50,7 @@ export class PDFStorageService {
       const filePath = `${userId}/${filename}`
 
       // Subir archivo a Supabase Storage
+      const supabase = this.client
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from(this.BUCKET_NAME)
         .upload(filePath, pdfBuffer, {
@@ -105,6 +108,7 @@ export class PDFStorageService {
   ): Promise<{ success: boolean; data?: Uint8Array; filename?: string; error?: string }> {
     try {
       // Obtener metadatos del archivo
+      const supabase = this.client
       const { data: metadata, error: metadataError } = await supabase
         .from("pdf_storage")
         .select("*")

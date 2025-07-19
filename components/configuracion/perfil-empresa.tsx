@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Building2, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/utils/supabase/client"
-import { authService } from "@/lib/auth"
+import { getAuthService } from "@/lib/auth"
 
 interface EmpresaData {
   id?: string
@@ -87,6 +87,7 @@ export default function PerfilEmpresa() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const { toast } = useToast()
   const supabase = createClient()
+  const authService = getAuthService()
 
   useEffect(() => {
     cargarDatosEmpresa()

@@ -14,7 +14,6 @@ export function createClient() {
 }
 
 // Instancia singleton para uso directo en componentes cliente
-export const supabase = createClient()
 
 // Función para validar configuración del cliente
 export function validateClientConfig() {
@@ -183,4 +182,4 @@ export const createClientSideClient = () => {
 }
 
 // Cliente por defecto para uso general en el cliente
-export const supabaseClient = createClient()
+export const supabaseClient = () => createClient()

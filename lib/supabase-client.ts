@@ -104,7 +104,9 @@ export class SupabaseClientService {
 }
 
 // Instancia singleton para uso en componentes
-export const supabaseClientService = new SupabaseClientService()
+export function getSupabaseClientService() {
+  return new SupabaseClientService()
+}
 
 // Hooks personalizados para React
 export function useSupabaseClient() {

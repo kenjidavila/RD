@@ -20,7 +20,6 @@ export function createServerClient() {
 }
 
 // Instancia singleton para uso directo en componentes cliente
-export const supabase = createClient()
 
 // Tipos para las tablas principales - SOLO PARA CLIENTE
 export interface Usuario {

@@ -227,4 +227,6 @@ export class DatabaseValidator {
   }
 }
 
-export const databaseValidator = new DatabaseValidator()
+export function getDatabaseValidator() {
+return new DatabaseValidator()
+}

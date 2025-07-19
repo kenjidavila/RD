@@ -21,7 +21,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/utils/supabase/client"
-import { authService } from "@/lib/auth"
+import { getAuthService } from "@/lib/auth"
 
 interface DiagnosticResult {
   name: string
@@ -42,6 +42,7 @@ export default function SystemDiagnostics() {
   const [progress, setProgress] = useState(0)
   const { toast } = useToast()
   const supabase = createClient()
+  const authService = getAuthService()
 
   const runDiagnostics = async () => {
     setLoading(true)

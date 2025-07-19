@@ -22,7 +22,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, Plus, Edit, Trash2, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { authService, type AuthUser } from "@/lib/auth"
+import { getAuthService, type AuthUser } from "@/lib/auth"
 
 interface NewUser {
   nombre: string
@@ -44,6 +44,7 @@ export default function GestionUsuarios() {
   })
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const { toast } = useToast()
+  const authService = getAuthService()
 
   useEffect(() => {
     cargarUsuarios()

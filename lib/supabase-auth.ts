@@ -2,7 +2,9 @@ import { createClient } from "@/utils/supabase/client"
 
 // Funciones de autenticación para uso en componentes cliente
 export class SupabaseAuth {
-  private static client = createClient()
+  private static get client() {
+   return createClient()
+  }
 
   static async signIn(email: string, password: string) {
     try {
