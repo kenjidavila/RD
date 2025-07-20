@@ -31,13 +31,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -48,11 +48,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
+    const empresaId = usuario.empresa_id
+
     // Obtener estadísticas de comprobantes fiscales
     const { data: comprobantes, error: errorComprobantes } = await supabase
       .from("comprobantes_fiscales")
       .select("estado_dgii, monto_total, created_at")
-      .eq("empresa_id", empresa.id)
+      .eq("empresa_id", empresaId)
 
     if (errorComprobantes) {
       return NextResponse.json(

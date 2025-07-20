@@ -31,13 +31,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -47,6 +47,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         { status: 404 },
       )
     }
+
+    const empresaId = usuario.empresa_id
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     let query = supabase
       .from("borradores_comprobantes")
       .select("*", { count: "exact" })
-      .eq("empresa_id", empresa.id)
+      .eq("empresa_id", empresaId)
       .order("updated_at", { ascending: false })
 
     // Aplicar filtros de búsqueda
@@ -144,13 +146,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -160,6 +162,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         { status: 404 },
       )
     }
+
+    const empresaId = usuario.empresa_id
 
     const body = await request.json()
     const { nombre_borrador, descripcion, datos_comprobante, tipo_comprobante, monto_total, cantidad_items } = body
@@ -191,7 +195,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Preparar datos del borrador
     const borradorData = {
-      empresa_id: empresa.id,
+      empresa_id: empresaId,
       nombre_borrador: nombre_borrador.trim(),
       descripcion: descripcion?.trim() || null,
       tipo_comprobante,
