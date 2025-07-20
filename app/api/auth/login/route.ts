@@ -46,7 +46,10 @@ export async function POST(request: NextRequest) {
         error: usuarioError,
         userId: data.user.id,
       })
-      return NextResponse.json({ error: "No se encontraron datos de usuario" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Registro incompleto, contacta soporte" },
+        { status: 404 },
+      )
     }
 
     logger.info("Login exitoso", {
