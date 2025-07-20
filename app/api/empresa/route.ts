@@ -24,11 +24,19 @@ export async function GET(): Promise<NextResponse<ApiResponse>> {
       );
     }
 
-    const { data: usuario, error: userError } = await supabase
+    let { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("empresa_id, empresas(*)")
       .eq("auth_user_id", user.id)
       .single();
+
+    if (userError || !usuario) {
+      ;({ data: usuario, error: userError } = await supabase
+        .from("usuarios")
+        .select("empresa_id, empresas(*)")
+        .eq("id", user.id)
+        .single());
+    }
 
     if (userError || !usuario) {
       return NextResponse.json(
@@ -63,11 +71,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    const { data: usuario, error: userError } = await supabase
+    let { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("id, empresa_id")
       .eq("auth_user_id", user.id)
       .single();
+
+    if (userError || !usuario) {
+      ;({ data: usuario, error: userError } = await supabase
+        .from("usuarios")
+        .select("id, empresa_id")
+        .eq("id", user.id)
+        .single());
+    }
 
     if (userError || !usuario) {
       return NextResponse.json(
