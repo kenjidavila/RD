@@ -1,25 +1,31 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/utils/supabase/server"
+import { createAdminClient, createClient } from "@/utils/supabase/server"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminClient()
+    const supabase = await createClient()
+    const admin = createAdminClient()
     const { email, password, nombre, rnc, razonSocial } = await request.json()
 
     if (!email || !password || !nombre || !rnc || !razonSocial) {
       return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
     }
 
-    // Registrar usuario desde Admin Client
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Registrar usuario utilizando signUp
+    const {
+      data: authData,
+      error: authError,
+    } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,
-      user_metadata: {
-        nombre,
-        rnc,
-        razon_social: razonSocial,
+      options: {
+        emailRedirectTo: process.env.NEXT_PUBLIC_BASE_URL,
+        data: {
+          nombre,
+          rnc,
+          razon_social: razonSocial,
+        },
       },
     })
 
@@ -46,6 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (empresaError) {
       logger.error("Error creando empresa", { error: empresaError, rnc })
+      await admin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: "Error al crear empresa: " + empresaError.message }, { status: 400 })
     }
 
@@ -61,6 +68,8 @@ export async function POST(request: NextRequest) {
 
     if (perfilError) {
       logger.error("Error creando perfil de usuario", { error: perfilError, userId })
+      await admin.auth.admin.deleteUser(userId)
+      await supabase.from("empresas").delete().eq("id", empresaData.id)
       return NextResponse.json({ error: "Error al crear perfil: " + perfilError.message }, { status: 400 })
     }
 

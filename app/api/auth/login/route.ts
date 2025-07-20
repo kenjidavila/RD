@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
       .eq("auth_user_id", data.user.id)
       .single()
 
-    if (usuarioError) {
-      logger.error("Error obteniendo datos de usuario", {
+    if (usuarioError || !usuario) {
+      logger.warn("Datos de usuario no encontrados", {
         error: usuarioError,
         userId: data.user.id,
       })
-      return NextResponse.json({ error: "Error obteniendo datos de usuario" }, { status: 500 })
+      return NextResponse.json({ error: "No se encontraron datos de usuario" }, { status: 400 })
     }
 
     logger.info("Login exitoso", {
