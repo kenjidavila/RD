@@ -14,7 +14,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Search, Package, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/utils/supabase/client"
 
 interface Item {
   id: string
@@ -65,63 +64,23 @@ export function ItemSelector({ onItemSelected }: ItemSelectorProps) {
   const loadItems = async () => {
     try {
       setLoading(true)
-      const supabase = createClient()
+      const response = await fetch("/api/items?estado=activo&limit=1000")
 
-      // Obtener el usuario actual
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError || !user) {
-        console.error("Error getting user:", userError)
-        return
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || "Error al cargar los items")
       }
 
-      // Obtener empresa del usuario
-      const { data: usuario, error: empresaError } = await supabase
-        .from("usuarios")
-        .select("empresa_id")
-        .eq("auth_user_id", user.id)
-        .single()
-
-      if (empresaError) {
-        console.error("Error getting empresa:", empresaError)
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información de la empresa",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Cargar items de la empresa
-      const empresaId = usuario?.empresa_id
-
-      const { data: itemsData, error: itemsError } = await supabase
-        .from("items")
-        .select("*")
-        .eq("empresa_id", empresaId)
-        .eq("activo", true)
-        .order("descripcion")
-
-      if (itemsError) {
-        console.error("Error loading items:", itemsError)
-        toast({
-          title: "Error",
-          description: "Error al cargar los items",
-          variant: "destructive",
-        })
-        return
-      }
+      const result = await response.json()
+      const itemsData = result.data as Item[]
 
       setItems(itemsData || [])
       setFilteredItems(itemsData || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading items:", error)
       toast({
         title: "Error",
-        description: "Error al cargar los items",
+        description: error.message || "Error al cargar los items",
         variant: "destructive",
       })
     } finally {
