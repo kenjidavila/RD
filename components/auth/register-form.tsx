@@ -14,8 +14,6 @@ import {
   Lock,
   Loader2,
   Flag,
-  Building2,
-  FileText,
 } from "lucide-react"
 
 interface RegisterFormProps {
@@ -30,8 +28,6 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
   const [formData, setFormData] = useState({
     nombre: "",
     apellidos: "",
-    rnc: "",
-    razonSocial: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -58,13 +54,6 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
       newErrors.apellidos = "Los apellidos son requeridos"
     }
 
-    if (!formData.rnc.trim()) {
-      newErrors.rnc = "El RNC es requerido"
-    }
-
-    if (!formData.razonSocial.trim()) {
-      newErrors.razonSocial = "La razón social es requerida"
-    }
 
     if (!formData.email) {
       newErrors.email = "El correo electrónico es requerido"
@@ -103,8 +92,6 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
       const registroData = {
         nombre: formData.nombre.trim(),
         apellidos: formData.apellidos.trim(),
-        rnc: formData.rnc.trim(),
-        razonSocial: formData.razonSocial.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       }
@@ -237,51 +224,6 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
               {errors.apellidos && <p className="text-sm text-red-600 mt-1">{errors.apellidos}</p>}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="rnc" className="text-sm font-medium text-gray-700">
-                RNC
-              </Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  id="rnc"
-                  type="text"
-                  placeholder="131231231"
-                  value={formData.rnc}
-                  onChange={(e) => handleInputChange("rnc", e.target.value)}
-                  className={`w-full px-4 py-3 pl-10 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder:text-gray-400 ${
-                    errors.rnc ? "border-red-300 focus:ring-red-400" : ""
-                  }`}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              {errors.rnc && <p className="text-sm text-red-600 mt-1">{errors.rnc}</p>}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="razonSocial" className="text-sm font-medium text-gray-700">
-                Razón Social
-              </Label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  id="razonSocial"
-                  type="text"
-                  placeholder="Nombre de la empresa"
-                  value={formData.razonSocial}
-                  onChange={(e) => handleInputChange("razonSocial", e.target.value)}
-                  className={`w-full px-4 py-3 pl-10 bg-gray-50 border border-gray-200 text-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 placeholder:text-gray-400 ${
-                    errors.razonSocial ? "border-red-300 focus:ring-red-400" : ""
-                  }`}
-                  required
-                  disabled={loading}
-                />
-              </div>
-              {errors.razonSocial && (
-                <p className="text-sm text-red-600 mt-1">{errors.razonSocial}</p>
-              )}
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">

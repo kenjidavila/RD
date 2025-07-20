@@ -15,33 +15,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 })
     }
 
-    // Obtener información completa del usuario
+    // Obtener información completa del usuario si existe
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
-      .select(`
-        *,
-        empresas (
-          id,
-          rnc,
-          razon_social,
-          nombre_comercial,
-          email,
-          telefono,
-          direccion,
-          provincia,
-          municipio,
-          activa
-        )
-      `)
+      .select(
+        `*, empresas ( id, rnc, razon_social, nombre_comercial, email, telefono, direccion, provincia, municipio, activa )`,
+      )
       .eq("id", user.id)
-      .single()
+      .maybeSingle()
 
     if (usuarioError) {
       logger.error("Error obteniendo datos de usuario", {
         error: usuarioError,
         userId: user.id,
       })
-      return NextResponse.json({ error: "Error obteniendo datos de usuario" }, { status: 500 })
     }
 
     return NextResponse.json({
