@@ -49,25 +49,6 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
     const empresaId = usuario.empresa_id
 
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("auth_user_id", user.id)
-      .single()
-
-    if (usuarioError || !usuario) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Empresa no encontrada",
-          errors: ["No se encontró la empresa asociada al usuario"],
-        },
-        { status: 404 },
-      )
-    }
-
-    const empresaId = usuario.empresa_id
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
