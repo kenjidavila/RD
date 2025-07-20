@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Shield, Building, Users, FileText, Palette } from "lucide-react"
@@ -9,19 +10,29 @@ import CertificadosDigitales from "@/components/configuracion/certificados-digit
 import GestionUsuarios from "@/components/configuracion/gestion-usuarios"
 import SecuenciasNCF from "@/components/configuracion/secuencias-ncf"
 import PersonalizacionFacturas from "@/components/configuracion/personalizacion-facturas"
+import { createClient } from "@/utils/supabase/client"
 
 export default function ConfiguracionPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   useEffect(() => {
-    // Verificar autenticación
-    const token = localStorage.getItem("auth_token")
-    if (token) {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) {
+        router.push("/")
+        return
+      }
       setIsAuthenticated(true)
+      setLoading(false)
     }
-    setLoading(false)
-  }, [])
+
+    checkAuth()
+  }, [router])
 
   if (loading) {
     return (
