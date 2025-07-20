@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createClient } from "@/utils/supabase/server"
 import { generateInvoicePDF, type InvoiceData } from "@/lib/pdf-generator"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     // Verificar autenticación
     const {
