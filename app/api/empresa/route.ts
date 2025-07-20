@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 interface ApiResponse {
   success: boolean;
   message?: string;

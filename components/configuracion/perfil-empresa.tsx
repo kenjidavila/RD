@@ -143,6 +143,8 @@ export default function PerfilEmpresa() {
       const result = await response.json()
       if (result.data) {
         setEmpresa(result.data)
+        // reload data from backend to ensure state matches stored values
+        await cargarDatosEmpresa()
       }
 
       toast({
