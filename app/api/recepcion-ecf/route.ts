@@ -33,7 +33,6 @@ export async function POST(request: NextRequest) {
     const trackId = `REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
     // Guardar en base de datos
-    const supabase = await createServerClient()
 
     const { error: insertError } = await supabase.from("comprobantes_recibidos").insert({
       track_id: trackId,
@@ -76,9 +75,15 @@ export async function GET(request: NextRequest) {
     const encf = searchParams.get("encf")
     const trackId = searchParams.get("trackId")
 
-    const supabase = createClient()
+    const { empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const supabase = await createServerClient()
+    const emisorRNC = empresa.rnc
 
-    let query = supabase.from("comprobantes_recibidos").select("*").order("fecha_recepcion", { ascending: false })
+    let query = supabase
+      .from("comprobantes_recibidos")
+      .select("*")
+      .order("fecha_recepcion", { ascending: false })
+      .eq("emisor_rnc", emisorRNC)
 
     if (encf) {
       query = query.eq("encf", encf)

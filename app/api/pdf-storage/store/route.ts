@@ -3,7 +3,6 @@ import { PDFStorageService } from "@/lib/pdf-storage-service"
 import { PDFGenerator } from "@/lib/pdf-generator"
 import { ECFDataMapper } from "@/lib/ecf-data-mapper"
 import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
-import { createServerClient } from "@/lib/supabase-server"
 import type { PDFGenerationRequest } from "@/types/ecf-types"
 
 export async function POST(request: NextRequest) {
