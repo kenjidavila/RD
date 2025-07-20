@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           activa
         )
       `)
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .single()
 
     if (usuarioError) {
