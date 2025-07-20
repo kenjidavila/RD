@@ -312,7 +312,7 @@ export default function PerfilEmpresa() {
                 onValueChange={(value: any) => handleInputChange("regimen_tributario", value)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccione un régimen" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ordinario">Ordinario</SelectItem>

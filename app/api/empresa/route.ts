@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import crypto from "crypto";
 
 interface ApiResponse {
   success: boolean;
@@ -73,8 +74,8 @@ export async function GET(): Promise<NextResponse<ApiResponse>> {
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
-    const body = await request.json();
-    const supabase = await createClient();
+  const body = await request.json();
+  const supabase = await createClient();
     const {
       data: { user },
       error: authError,
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    let { data: usuario, error: userError } = await supabase
+  let { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("id, empresa_id")
       .eq("auth_user_id", user.id)
@@ -108,56 +109,49 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    let empresaId = usuario.empresa_id as string | null;
-    let result;
+  const { data: existingEmpresa } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
 
-    if (empresaId) {
-      result = await supabase
-        .from("empresas")
-        .update({ ...body, updated_at: new Date().toISOString() })
-        .eq("id", empresaId)
-        .select()
-        .single();
-    } else {
-      const newId = crypto.randomUUID();
-      result = await supabase
-        .from("empresas")
-        .insert({
-          ...body,
-          id: newId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          owner_id: user.id,
-          user_id: user.id,
-        })
-        .select()
-        .single();
+  const upsertData: Record<string, any> = {
+      ...body,
+      user_id: user.id,
+      owner_id: user.id,
+      updated_at: new Date().toISOString(),
+  };
 
-      if (!result.error && result.data) {
-        empresaId = result.data.id;
-        const { error: updateError, count } = await supabase
+  if (existingEmpresa) {
+      upsertData.id = existingEmpresa.id;
+  } else {
+      upsertData.id = crypto.randomUUID();
+      upsertData.created_at = new Date().toISOString();
+  }
+
+  const { data: empresa, error: resultError } = await supabase
+      .from("empresas")
+      .upsert(upsertData, { onConflict: "user_id" })
+      .select()
+      .single();
+
+  if (resultError) {
+      throw resultError;
+  }
+
+  if (!existingEmpresa && empresa) {
+      const { error: updError } = await supabase
           .from("usuarios")
-          .update({ empresa_id: empresaId, updated_at: new Date().toISOString() })
+          .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
           .eq("auth_user_id", user.id);
 
-        if (updateError || (count ?? 0) === 0) {
+      if (updError) {
           await supabase
-            .from("usuarios")
-            .update({ empresa_id: empresaId, updated_at: new Date().toISOString() })
-            .eq("id", user.id);
-        }
+              .from("usuarios")
+              .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
+              .eq("id", user.id);
       }
-    }
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    const { data: empresa } = await supabase
-      .from("empresas")
-      .select("*")
-      .eq("id", empresaId as string)
-      .single();
+  }
 
     return NextResponse.json({ success: true, message: "Empresa guardada", data: empresa });
   } catch (error: any) {
