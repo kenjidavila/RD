@@ -19,7 +19,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       error: authError,
     } = await supabase.auth.getUser()
 
-    if (authError || !user) {
+  if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
@@ -29,6 +29,25 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         { status: 401 },
       )
     }
+
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
+    const empresaId = usuario.empresa_id
 
     // Obtener empresa del usuario
     const { data: usuario, error: usuarioError } = await supabase
@@ -227,17 +246,61 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       codigo = codigoResult
     }
 
+    // Verificar código duplicado
+    const { data: existing } = await supabase
+      .from("items")
+      .select("id")
+      .eq("empresa_id", empresaId)
+      .eq("codigo", codigo)
+      .single()
+    if (existing) {
+      return NextResponse.json(
+        { success: false, error: "Código de item ya existe" },
+        { status: 409 },
+      )
+    }
+
     // Preparar datos del item
     const itemData = {
       empresa_id: empresaId,
       codigo,
+      codigo_barras: body.codigo_barras?.trim() || null,
       descripcion: body.descripcion.trim(),
       descripcion_corta: body.descripcion_corta?.trim() || null,
       tipo_item: body.tipo_item || "bien",
       categoria: body.categoria?.trim() || null,
-      precio_unitario: Number.parseFloat(body.precio_unitario) || 0,
+      subcategoria: body.subcategoria?.trim() || null,
+      marca: body.marca?.trim() || null,
+      modelo: body.modelo?.trim() || null,
+      unidad_medida: body.unidad_medida || "UND",
+      peso: body.peso !== undefined ? Number.parseFloat(body.peso) : null,
+      volumen: body.volumen !== undefined ? Number.parseFloat(body.volumen) : null,
+      precio_compra: body.precio_compra !== undefined ? Number.parseFloat(body.precio_compra) : 0,
+      precio_venta: body.precio_venta !== undefined ? Number.parseFloat(body.precio_venta) : 0,
+      precio_venta_2: body.precio_venta_2 !== undefined ? Number.parseFloat(body.precio_venta_2) : null,
+      precio_venta_3: body.precio_venta_3 !== undefined ? Number.parseFloat(body.precio_venta_3) : null,
+      precio_minimo: body.precio_minimo !== undefined ? Number.parseFloat(body.precio_minimo) : null,
       tasa_itbis: body.tasa_itbis || "18",
+      exento_itbis: body.exento_itbis === true,
+      codigo_impuesto_adicional: body.codigo_impuesto_adicional?.trim() || null,
+      tasa_impuesto_adicional:
+        body.tasa_impuesto_adicional !== undefined ? Number.parseFloat(body.tasa_impuesto_adicional) : 0,
+      aplica_isc: body.aplica_isc === true,
+      grados_alcohol: body.grados_alcohol !== undefined ? Number.parseFloat(body.grados_alcohol) : null,
+      cantidad_referencia:
+        body.cantidad_referencia !== undefined ? Number.parseFloat(body.cantidad_referencia) : null,
+      subcantidad: body.subcantidad !== undefined ? Number.parseFloat(body.subcantidad) : null,
+      precio_unitario_referencia:
+        body.precio_unitario_referencia !== undefined
+          ? Number.parseFloat(body.precio_unitario_referencia)
+          : null,
+      maneja_inventario: body.maneja_inventario === true,
+      stock_actual: body.stock_actual !== undefined ? Number.parseFloat(body.stock_actual) : 0,
+      stock_minimo: body.stock_minimo !== undefined ? Number.parseFloat(body.stock_minimo) : 0,
+      stock_maximo: body.stock_maximo !== undefined ? Number.parseFloat(body.stock_maximo) : 0,
       activo: body.activo !== false,
+      es_favorito: body.es_favorito === true,
+      notas: body.notas?.trim() || null,
     }
 
     const { data, error } = await supabase.from("items").insert(itemData).select().single()
@@ -351,15 +414,40 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       }
     }
 
-    // Limpiar datos de actualización
-    const cleanUpdateData = Object.fromEntries(Object.entries(updateData).filter(([_, value]) => value !== undefined))
-
-    // Convertir precio_unitario a número si existe
-    if (cleanUpdateData.precio_unitario) {
-      cleanUpdateData.precio_unitario = Number.parseFloat(cleanUpdateData.precio_unitario)
+    // Limpiar datos de actualización y convertir valores numéricos
+    const cleanUpdateData: Record<string, any> = {}
+    for (const [key, value] of Object.entries(updateData)) {
+      if (value === undefined) continue
+      switch (key) {
+        case "peso":
+        case "volumen":
+        case "precio_compra":
+        case "precio_venta":
+        case "precio_venta_2":
+        case "precio_venta_3":
+        case "precio_minimo":
+        case "tasa_impuesto_adicional":
+        case "grados_alcohol":
+        case "cantidad_referencia":
+        case "subcantidad":
+        case "precio_unitario_referencia":
+        case "stock_actual":
+        case "stock_minimo":
+        case "stock_maximo":
+          cleanUpdateData[key] = Number.parseFloat(value as any)
+          break
+        default:
+          cleanUpdateData[key] = value
+      }
     }
 
-    const { data, error } = await supabase.from("items").update(cleanUpdateData).eq("id", id).select().single()
+    const { data, error } = await supabase
+      .from("items")
+      .update(cleanUpdateData)
+      .eq("id", id)
+      .eq("empresa_id", empresaId)
+      .select()
+      .single()
 
     if (error) {
       return NextResponse.json(
@@ -436,7 +524,30 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
       )
     }
 
-    const { error } = await supabase.from("items").delete().eq("id", id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
+    const empresaId = usuario.empresa_id
+
+    const { error } = await supabase
+      .from("items")
+      .delete()
+      .eq("id", id)
+      .eq("empresa_id", empresaId)
 
     if (error) {
       return NextResponse.json(
