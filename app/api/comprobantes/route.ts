@@ -47,10 +47,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Obtener empresa del usuario
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("id, rnc, razon_social")
-      .eq("user_id", user.id)
+      .eq("id", usuario.empresa_id)
       .single()
 
     if (empresaError || !empresa) {
@@ -254,13 +271,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -270,6 +287,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         { status: 404 },
       )
     }
+
+    const empresaId = usuario.empresa_id
 
     const { searchParams } = new URL(request.url)
     const desde = searchParams.get("desde")
@@ -289,7 +308,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       `,
         { count: "exact" },
       )
-      .eq("empresa_id", empresa.id)
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
 
     if (desde) {

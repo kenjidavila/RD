@@ -31,13 +31,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -48,10 +48,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
+    const empresaId = usuario.empresa_id
+
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get("tipo")
 
-    let query = supabase.from("configuraciones").select("*").eq("empresa_id", empresa.id)
+    let query = supabase.from("configuraciones").select("*").eq("empresa_id", empresaId)
 
     if (tipo) {
       query = query.eq("tipo", tipo)
@@ -115,13 +117,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -131,6 +133,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         { status: 404 },
       )
     }
+
+    const empresaId = usuario.empresa_id
 
     const body = await request.json()
     const { tipo, configuracion } = body
@@ -149,7 +153,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const { data, error } = await supabase
       .from("configuraciones")
       .upsert({
-        empresa_id: empresa.id,
+        empresa_id: empresaId,
         tipo,
         configuracion,
         updated_at: new Date().toISOString(),
@@ -222,13 +226,13 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -239,7 +243,13 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
       )
     }
 
-    const { error } = await supabase.from("configuraciones").delete().eq("empresa_id", empresa.id).eq("tipo", tipo)
+    const empresaId = usuario.empresa_id
+
+    const { error } = await supabase
+      .from("configuraciones")
+      .delete()
+      .eq("empresa_id", empresaId)
+      .eq("tipo", tipo)
 
     if (error) {
       return NextResponse.json(
