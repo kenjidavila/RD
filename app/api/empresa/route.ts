@@ -96,19 +96,37 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       .eq("auth_user_id", user.id)
       .single();
 
-    if (userError || !usuario) {
+  if (userError || !usuario) {
       ;({ data: usuario, error: userError } = await supabase
         .from("usuarios")
         .select("id, empresa_id")
         .eq("id", user.id)
         .single());
-    }
+  }
 
     if (userError || !usuario) {
-      return NextResponse.json(
-        { success: false, error: "Usuario sin empresa", errors: ["No se pudo obtener el usuario"] },
-        { status: 404 },
-      );
+      const { data: newUser, error: insertError } = await supabase
+        .from("usuarios")
+        .insert({
+          id: user.id,
+          auth_user_id: user.id,
+          email: user.email,
+          nombre: user.user_metadata?.nombre || user.email,
+          activo: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select("id, empresa_id")
+        .single();
+
+      if (insertError || !newUser) {
+        return NextResponse.json(
+          { success: false, error: "Usuario sin empresa", errors: ["No se pudo obtener el usuario"] },
+          { status: 404 },
+        );
+      }
+
+      usuario = newUser;
     }
 
   const { data: existingEmpresa } = await supabase
