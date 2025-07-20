@@ -34,7 +34,7 @@ export class SupabaseServerUtils {
     const { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("empresa_id, empresas(*)")
-      .eq("id", userId)
+      .eq("auth_user_id", userId)
       .single()
 
     if (userError || !usuario) {
@@ -60,7 +60,7 @@ export class SupabaseServerUtils {
     const { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("empresa_id, empresas(*)")
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .single()
 
     if (userError || !usuario || !usuario.empresas) {

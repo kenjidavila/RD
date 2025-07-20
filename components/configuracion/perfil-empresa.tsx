@@ -160,6 +160,11 @@ export default function PerfilEmpresa() {
         updated_at: new Date().toISOString(),
       }
 
+      const authUser = await authService.getCurrentUser()
+      if (!authUser) {
+        throw new Error("Usuario no autenticado")
+      }
+
       let result
 
       if (empresa.id) {
@@ -171,6 +176,8 @@ export default function PerfilEmpresa() {
           ...empresaData,
           id: crypto.randomUUID(),
           created_at: new Date().toISOString(),
+          owner_id: authUser.id,
+          user_id: authUser.id,
         }
 
         result = await supabase.from("empresas").insert(newEmpresaData).select().single()
@@ -183,7 +190,7 @@ export default function PerfilEmpresa() {
               empresa_id: result.data.id,
               updated_at: new Date().toISOString(),
             })
-            .eq("id", currentUser.id)
+            .eq("auth_user_id", authUser.id)
         }
       }
 

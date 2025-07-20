@@ -111,7 +111,11 @@ export class AuthService {
 
   async getUserData(userId: string): Promise<AuthUser | null> {
     try {
-      const { data, error } = await this.supabase.from("usuarios").select("*").eq("id", userId).single()
+      const { data, error } = await this.supabase
+        .from("usuarios")
+        .select("*")
+        .eq("auth_user_id", userId)
+        .single()
 
       if (error) throw error
       return data
