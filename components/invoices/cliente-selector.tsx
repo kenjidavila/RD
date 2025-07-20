@@ -80,10 +80,10 @@ export function ClienteSelector({ onClienteSelected }: ClienteSelectorProps) {
       }
 
       // Obtener empresa del usuario
-      const { data: empresa, error: empresaError } = await supabase
-        .from("empresas")
-        .select("id")
-        .eq("id", user.id)
+      const { data: usuario, error: empresaError } = await supabase
+        .from("usuarios")
+        .select("empresa_id")
+        .eq("auth_user_id", user.id)
         .single()
 
       if (empresaError) {
@@ -97,10 +97,12 @@ export function ClienteSelector({ onClienteSelected }: ClienteSelectorProps) {
       }
 
       // Cargar clientes de la empresa
+      const empresaId = usuario?.empresa_id
+
       const { data: clientesData, error: clientesError } = await supabase
         .from("clientes")
         .select("*")
-        .eq("empresa_id", empresa.id)
+        .eq("empresa_id", empresaId)
         .eq("activo", true)
         .order("nombre_razon_social")
 

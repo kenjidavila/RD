@@ -180,7 +180,7 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
       const { data: usuario, error: empresaError } = await supabase
         .from("usuarios")
         .select("empresa_id, empresas(*)")
-        .eq("id", user.id)
+        .eq("auth_user_id", user.id)
         .single()
 
       if (empresaError) {

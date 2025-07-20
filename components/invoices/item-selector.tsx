@@ -79,10 +79,10 @@ export function ItemSelector({ onItemSelected }: ItemSelectorProps) {
       }
 
       // Obtener empresa del usuario
-      const { data: empresa, error: empresaError } = await supabase
-        .from("empresas")
-        .select("id")
-        .eq("id", user.id)
+      const { data: usuario, error: empresaError } = await supabase
+        .from("usuarios")
+        .select("empresa_id")
+        .eq("auth_user_id", user.id)
         .single()
 
       if (empresaError) {
@@ -96,10 +96,12 @@ export function ItemSelector({ onItemSelected }: ItemSelectorProps) {
       }
 
       // Cargar items de la empresa
+      const empresaId = usuario?.empresa_id
+
       const { data: itemsData, error: itemsError } = await supabase
         .from("items")
         .select("*")
-        .eq("empresa_id", empresa.id)
+        .eq("empresa_id", empresaId)
         .eq("activo", true)
         .order("descripcion")
 
