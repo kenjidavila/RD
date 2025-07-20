@@ -45,6 +45,22 @@ export async function GET(): Promise<NextResponse<ApiResponse>> {
       );
     }
 
+    if (!usuario.empresas && usuario.empresa_id) {
+      const { data: empresa } = await supabase
+        .from("empresas")
+        .select("*")
+        .eq("id", usuario.empresa_id)
+        .single();
+      usuario.empresas = empresa ?? null;
+    }
+
+    if (!usuario.empresas) {
+      return NextResponse.json(
+        { success: false, error: "Empresa no encontrada", errors: ["No se encontró la empresa asociada al usuario"] },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json({ success: true, data: usuario.empresas });
   } catch (error) {
     console.error("Error obteniendo empresa:", error);
@@ -119,10 +135,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
       if (!result.error && result.data) {
         empresaId = result.data.id;
-        await supabase
+        const { error: updateError, count } = await supabase
           .from("usuarios")
           .update({ empresa_id: empresaId, updated_at: new Date().toISOString() })
           .eq("auth_user_id", user.id);
+
+        if (updateError || (count ?? 0) === 0) {
+          await supabase
+            .from("usuarios")
+            .update({ empresa_id: empresaId, updated_at: new Date().toISOString() })
+            .eq("id", user.id);
+        }
       }
     }
 
@@ -130,7 +153,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       throw result.error;
     }
 
-    return NextResponse.json({ success: true, message: "Empresa guardada", data: result.data });
+    const { data: empresa } = await supabase
+      .from("empresas")
+      .select("*")
+      .eq("id", empresaId as string)
+      .single();
+
+    return NextResponse.json({ success: true, message: "Empresa guardada", data: empresa });
   } catch (error: any) {
     console.error("Error guardando empresa:", error);
     return NextResponse.json(
