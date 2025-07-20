@@ -74,7 +74,11 @@ export class SupabaseServerUtils {
   static async checkUserPermissions(userId: string, requiredRole?: string) {
     const supabase = await createClient()
 
-    const { data: usuario, error } = await supabase.from("usuarios").select("rol, activo").eq("id", userId).single()
+    const { data: usuario, error } = await supabase
+      .from("usuarios")
+      .select("rol, activo")
+      .eq("auth_user_id", userId)
+      .single()
 
     if (error || !usuario) {
       throw new Error("Usuario no encontrado")

@@ -58,15 +58,18 @@ export class AuthService {
       if (error) throw error
 
       if (data.user) {
-        // Crear registro en la tabla usuarios
-        const { error: userError } = await this.supabase.from("usuarios").insert({
-          id: data.user.id,
-          email,
-          nombre: userData.nombre,
-          rol: userData.rol,
-          empresa_id: userData.empresa_id,
-          activo: true,
-        })
+        // Crear registro en la tabla usuarios vinculando auth_user_id
+        const { error: userError } = await this.supabase
+          .from("usuarios")
+          .insert({
+            id: data.user.id,
+            auth_user_id: data.user.id,
+            email,
+            nombre: userData.nombre,
+            rol: userData.rol,
+            empresa_id: userData.empresa_id,
+            activo: true,
+          })
 
         if (userError) throw userError
       }
@@ -133,7 +136,7 @@ export class AuthService {
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId)
+        .eq("auth_user_id", userId)
         .select()
         .single()
 
@@ -160,7 +163,7 @@ export class AuthService {
           activo: false,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", userId)
+        .eq("auth_user_id", userId)
 
       if (error) throw error
 
