@@ -35,6 +35,8 @@ interface Cliente {
   retencionIsr: boolean
   activo: boolean
   notas?: string
+  contactos?: Contacto[]
+  direcciones?: Direccion[]
 }
 
 interface Contacto {
@@ -107,7 +109,12 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
   useEffect(() => {
     if (cliente) {
       setFormData(cliente)
-      // En una implementación real, cargarías contactos y direcciones desde la API
+      if (cliente.contactos) {
+        setContactos(cliente.contactos)
+      }
+      if (cliente.direcciones) {
+        setDirecciones(cliente.direcciones)
+      }
     }
   }, [cliente])
 
@@ -161,6 +168,8 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
         municipio: formData.municipio,
         pais: formData.pais,
         activo: formData.activo,
+        contactos,
+        direcciones,
       }
 
       const response = await fetch("/api/clientes", {
