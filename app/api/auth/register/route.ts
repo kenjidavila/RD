@@ -67,9 +67,12 @@ export async function POST(request: NextRequest) {
     logger.info("Usuario registrado exitosamente", { userId, email, empresaId: empresaData.id })
 
     return NextResponse.json({
+      success: true,
       message: "Usuario registrado exitosamente",
-      userId,
-      empresa: empresaData,
+      data: {
+        userId,
+        empresa: empresaData,
+      },
     })
   } catch (error) {
     logger.error("Error en registro", { error })

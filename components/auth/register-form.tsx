@@ -113,6 +113,7 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify(registroData),
       });
 

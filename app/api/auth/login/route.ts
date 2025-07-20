@@ -57,9 +57,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: "Login exitoso",
-      user: data.user,
-      usuario,
-      session: data.session,
+      data: {
+        user: data.user,
+        usuario,
+        session: data.session,
+      },
     })
   } catch (error) {
     logger.error("Error en login", { error })
