@@ -5,14 +5,14 @@ import { logger } from "@/lib/logger"
 export async function POST(request: NextRequest) {
   try {
     const supabase = createAdminClient()
-    const { email, password, nombre, rnc, razonSocial } = await request.json()
+    const { email, password, nombre, apellidos, rnc, razonSocial } = await request.json()
 
-    if (!email || !password || !nombre || !rnc || !razonSocial) {
-      return NextResponse.json({
-        success: false,
-        error: "Todos los campos son requeridos",
-      }, { status: 400 })
-    }
+    if (!email || !password || !nombre || !apellidos || !rnc || !razonSocial) {
+        return NextResponse.json({
+          success: false,
+          error: "Todos los campos son requeridos",
+        }, { status: 400 })
+      }
 
     // Registrar usuario desde Admin Client
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
       user_metadata: {
         nombre,
+        apellidos,
         rnc,
         razon_social: razonSocial,
       },
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (empresaError) {
       logger.error("Error creando empresa", { error: empresaError, rnc })
+      await supabase.auth.admin.deleteUser(userId)
       return NextResponse.json({
         success: false,
         error: "Error al crear empresa: " + empresaError.message,
@@ -69,6 +71,8 @@ export async function POST(request: NextRequest) {
 
     if (perfilError) {
       logger.error("Error creando perfil de usuario", { error: perfilError, userId })
+      await supabase.from("empresas").delete().eq("id", empresaData.id)
+      await supabase.auth.admin.deleteUser(userId)
       return NextResponse.json({
         success: false,
         error: "Error al crear perfil: " + perfilError.message,
