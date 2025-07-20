@@ -13,14 +13,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Registrar usuario utilizando signUp
-    const {
-      data: authData,
-      error: authError,
-    } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: process.env.NEXT_PUBLIC_BASE_URL,
+        // Enviar metadata adicional pero evitar requerir confirmación por email
         data: {
           nombre,
           rnc,
@@ -37,6 +34,23 @@ export async function POST(request: NextRequest) {
     const userId = authData?.user?.id
     if (!userId) {
       return NextResponse.json({ error: "Error al crear usuario" }, { status: 400 })
+    }
+
+    // Si no se obtuvo sesión (por ejemplo, si se requiere confirmación de correo),
+    // intentar iniciar sesión para obtenerla y que RLS permita las inserciones
+    if (!authData.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        await admin.auth.admin.deleteUser(userId)
+        return NextResponse.json(
+          { error: "No se pudo establecer la sesión" },
+          { status: 400 },
+        )
+      }
     }
 
     const { data: empresaData, error: empresaError } = await supabase
