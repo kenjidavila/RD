@@ -8,7 +8,10 @@ export async function POST(request: NextRequest) {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email y contraseña son requeridos" }, { status: 400 })
+      return NextResponse.json({
+        success: false,
+        error: "Email y contraseña son requeridos",
+      }, { status: 400 })
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -18,11 +21,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       logger.warn("Intento de login fallido", { email, error: error.message })
-      return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 })
+      return NextResponse.json({
+        success: false,
+        error: "Credenciales inválidas",
+      }, { status: 401 })
     }
 
     if (!data.user) {
-      return NextResponse.json({ error: "Error en autenticación" }, { status: 401 })
+      return NextResponse.json({ success: false, error: "Error en autenticación" }, { status: 401 })
     }
 
     // Obtener información del usuario y empresa
@@ -46,7 +52,10 @@ export async function POST(request: NextRequest) {
         error: usuarioError,
         userId: data.user.id,
       })
-      return NextResponse.json({ error: "Error obteniendo datos de usuario" }, { status: 500 })
+      return NextResponse.json({
+        success: false,
+        error: "Error obteniendo datos de usuario",
+      }, { status: 500 })
     }
 
     logger.info("Login exitoso", {
@@ -56,13 +65,16 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({
+      success: true,
       message: "Login exitoso",
-      user: data.user,
-      usuario,
-      session: data.session,
+      data: {
+        user: data.user,
+        usuario,
+        session: data.session,
+      },
     })
   } catch (error) {
     logger.error("Error en login", { error })
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Error interno del servidor" }, { status: 500 })
   }
 }
