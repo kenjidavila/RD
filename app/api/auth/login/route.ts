@@ -31,37 +31,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Error en autenticación" }, { status: 401 })
     }
 
-    // Obtener información del usuario y empresa
+    // Obtener información del usuario y empresa si existe
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
-      .select(`
-        *,
-        empresas (
-          id,
-          rnc,
-          razon_social,
-          nombre_comercial,
-          activa
-        )
-      `)
+      .select(
+        `*, empresas ( id, rnc, razon_social, nombre_comercial, activa )`,
+      )
       .eq("id", data.user.id)
-      .single()
+      .maybeSingle()
 
     if (usuarioError) {
       logger.error("Error obteniendo datos de usuario", {
         error: usuarioError,
         userId: data.user.id,
       })
-      return NextResponse.json({
-        success: false,
-        error: "Error obteniendo datos de usuario",
-      }, { status: 500 })
     }
 
     logger.info("Login exitoso", {
       userId: data.user.id,
       email,
-      empresaId: usuario.empresa_id,
     })
 
     return NextResponse.json({
@@ -69,7 +57,7 @@ export async function POST(request: NextRequest) {
       message: "Login exitoso",
       data: {
         user: data.user,
-        usuario,
+        usuario: usuario ?? null,
         session: data.session,
       },
     })
