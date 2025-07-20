@@ -5,11 +5,14 @@ import { logger } from "@/lib/logger"
 export async function POST(request: NextRequest) {
   try {
     const supabase = createAdminClient()
-    const { email, password, nombre, rnc, razonSocial } = await request.json()
+    const { email, password, nombre, apellidos, rnc, razonSocial } = await request.json()
 
-    if (!email || !password || !nombre || !rnc || !razonSocial) {
-      return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
-    }
+    if (!email || !password || !nombre || !apellidos || !rnc || !razonSocial) {
+        return NextResponse.json({
+          success: false,
+          error: "Todos los campos son requeridos",
+        }, { status: 400 })
+      }
 
     // Registrar usuario desde Admin Client
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -18,6 +21,7 @@ export async function POST(request: NextRequest) {
       email_confirm: true,
       user_metadata: {
         nombre,
+        apellidos,
         rnc,
         razon_social: razonSocial,
       },
@@ -25,12 +29,15 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       logger.error("Error en registro de usuario", { error: authError, email })
-      return NextResponse.json({ error: "Error al registrar usuario: " + authError.message }, { status: 400 })
+      return NextResponse.json({
+        success: false,
+        error: "Error al registrar usuario: " + authError.message,
+      }, { status: 400 })
     }
 
     const userId = authData?.user?.id
     if (!userId) {
-      return NextResponse.json({ error: "Error al crear usuario" }, { status: 400 })
+      return NextResponse.json({ success: false, error: "Error al crear usuario" }, { status: 400 })
     }
 
     const { data: empresaData, error: empresaError } = await supabase
@@ -45,7 +52,11 @@ export async function POST(request: NextRequest) {
 
     if (empresaError) {
       logger.error("Error creando empresa", { error: empresaError, rnc })
-      return NextResponse.json({ error: "Error al crear empresa: " + empresaError.message }, { status: 400 })
+      await supabase.auth.admin.deleteUser(userId)
+      return NextResponse.json({
+        success: false,
+        error: "Error al crear empresa: " + empresaError.message,
+      }, { status: 400 })
     }
 
     const { error: perfilError } = await supabase.from("usuarios").insert({
@@ -60,18 +71,26 @@ export async function POST(request: NextRequest) {
 
     if (perfilError) {
       logger.error("Error creando perfil de usuario", { error: perfilError, userId })
-      return NextResponse.json({ error: "Error al crear perfil: " + perfilError.message }, { status: 400 })
+      await supabase.from("empresas").delete().eq("id", empresaData.id)
+      await supabase.auth.admin.deleteUser(userId)
+      return NextResponse.json({
+        success: false,
+        error: "Error al crear perfil: " + perfilError.message,
+      }, { status: 400 })
     }
 
     logger.info("Usuario registrado exitosamente", { userId, email, empresaId: empresaData.id })
 
     return NextResponse.json({
+      success: true,
       message: "Usuario registrado exitosamente",
-      userId,
-      empresa: empresaData,
+      data: {
+        userId,
+        empresa: empresaData,
+      },
     })
   } catch (error) {
     logger.error("Error en registro", { error })
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Error interno del servidor" }, { status: 500 })
   }
 }
