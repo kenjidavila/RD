@@ -172,7 +172,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Validar tipo de cliente
-    const tiposValidos = ["persona_fisica", "persona_juridica", "extranjero"]
+    const tiposValidos = ["regular", "vip", "corporativo", "gobierno"]
     if (!tiposValidos.includes(body.tipo_cliente)) {
       return NextResponse.json(
         {
@@ -198,6 +198,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       municipio: body.municipio?.trim() || null,
       pais: body.pais?.trim() || "DO",
       activo: body.activo !== false,
+      limite_credito: body.limite_credito ? Number(body.limite_credito) : 0,
+      dias_credito: body.dias_credito ? Number(body.dias_credito) : 0,
+      descuento_general: body.descuento_general
+        ? Number(body.descuento_general)
+        : 0,
+      exento_itbis: body.exento_itbis === true,
+      retencion_itbis: body.retencion_itbis === true,
+      retencion_isr: body.retencion_isr === true,
+      notas: body.notas?.trim() || null,
     }
 
     const { data, error } = await supabase.from("clientes").insert(clienteData).select().single()

@@ -148,16 +148,42 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
     }
 
     try {
-      // Aquí implementarías la llamada a la API
-      console.log("Guardando cliente:", formData)
-      console.log("Contactos:", contactos)
-      console.log("Direcciones:", direcciones)
+      const payload = {
+        id: cliente?.id,
+        rnc_cedula: formData.rncCedula,
+        tipo_cliente: formData.tipoCliente,
+        razon_social: formData.razonSocial,
+        nombre_comercial: formData.nombreComercial,
+        telefono: formData.telefono,
+        email: formData.email,
+        direccion: formData.direccion,
+        provincia: formData.provincia,
+        municipio: formData.municipio,
+        pais: formData.pais,
+        activo: formData.activo,
+        limite_credito: formData.limiteCredito,
+        dias_credito: formData.diasCredito,
+        descuento_general: formData.descuentoGeneral,
+        exento_itbis: formData.exentoItbis,
+        retencion_itbis: formData.retencionItbis,
+        retencion_isr: formData.retencionIsr,
+        notas: formData.notas,
+      }
 
-      // Simular guardado
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("/api/clientes", {
+        method: cliente ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-      alert(cliente ? "Cliente actualizado exitosamente" : "Cliente creado exitosamente")
-      onClose()
+      const data = await response.json()
+
+      if (data.success) {
+        alert(cliente ? "Cliente actualizado exitosamente" : "Cliente creado exitosamente")
+        onClose()
+      } else {
+        setErrors(data.errors || [data.error || "Error al guardar el cliente"])
+      }
     } catch (error) {
       setErrors(["Error al guardar el cliente"])
     } finally {

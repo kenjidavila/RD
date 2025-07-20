@@ -205,14 +205,41 @@ export default function ItemForm({ item, onClose }: ItemFormProps) {
     }
 
     try {
-      // Aquí implementarías la llamada a la API
-      console.log("Guardando item:", formData)
+      const payload = {
+        id: item?.id,
+        codigo: formData.codigo,
+        codigo_barras: formData.codigoBarras,
+        descripcion: formData.descripcion,
+        descripcion_corta: formData.descripcionCorta,
+        tipo_item: formData.tipoItem,
+        categoria: formData.categoria,
+        precio_unitario: formData.precioVenta,
+        unidad_medida: formData.unidadMedida,
+        tasa_itbis: formData.tasaItbis,
+        exento_itbis: formData.exentoItbis,
+        maneja_inventario: formData.manejaInventario,
+        stock_actual: formData.stockActual,
+        stock_minimo: formData.stockMinimo,
+        stock_maximo: formData.stockMaximo,
+        activo: formData.activo,
+        es_favorito: formData.esFavorito,
+        notas: formData.notas,
+      }
 
-      // Simular guardado
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await fetch("/api/items", {
+        method: item ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-      alert(item ? "Item actualizado exitosamente" : "Item creado exitosamente")
-      onClose()
+      const data = await response.json()
+
+      if (data.success) {
+        alert(item ? "Item actualizado exitosamente" : "Item creado exitosamente")
+        onClose()
+      } else {
+        setErrors(data.errors || [data.error || "Error al guardar el item"])
+      }
     } catch (error) {
       setErrors(["Error al guardar el item"])
     } finally {
