@@ -14,11 +14,8 @@ import { createClient } from "@/lib/supabase"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
 
-interface CertificadosDigitalesProps {
-  empresaId: string
-}
-
-export default function CertificadosDigitales({ empresaId }: CertificadosDigitalesProps) {
+export default function CertificadosDigitales() {
+  const [empresaId, setEmpresaId] = useState<string | null>(null)
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -28,10 +25,28 @@ export default function CertificadosDigitales({ empresaId }: CertificadosDigital
   const supabase = createClient()
 
   useEffect(() => {
-    cargarCertificados()
+    const loadEmpresa = async () => {
+      try {
+        const res = await fetch("/api/empresa")
+        if (res.ok) {
+          const result = await res.json()
+          setEmpresaId(result.data?.id || null)
+        }
+      } catch (error) {
+        logger.error("Error obteniendo empresa", { error })
+      }
+    }
+    loadEmpresa()
+  }, [])
+
+  useEffect(() => {
+    if (empresaId) {
+      cargarCertificados()
+    }
   }, [empresaId])
 
   const cargarCertificados = async () => {
+    if (!empresaId) return
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -55,6 +70,11 @@ export default function CertificadosDigitales({ empresaId }: CertificadosDigital
   const subirCertificado = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
+
+    if (!empresaId) {
+      setError("Empresa no identificada")
+      return
+    }
 
     // Validar tipo de archivo
     const allowedTypes = [".p12", ".pfx", ".pem", ".crt"]
@@ -117,6 +137,11 @@ export default function CertificadosDigitales({ empresaId }: CertificadosDigital
   const eliminarCertificado = async (certificado: CertificadoDigital) => {
     if (!confirm("¿Está seguro de eliminar este certificado digital?")) return
 
+    if (!empresaId) {
+      setError("Empresa no identificada")
+      return
+    }
+
     try {
       // Eliminar archivo de storage
       const fileName = certificado.archivo_url.split("/").pop()
@@ -140,6 +165,10 @@ export default function CertificadosDigitales({ empresaId }: CertificadosDigital
   }
 
   const descargarCertificado = async (certificado: CertificadoDigital) => {
+    if (!empresaId) {
+      setError("Empresa no identificada")
+      return
+    }
     try {
       const response = await fetch(certificado.archivo_url)
       const blob = await response.blob()
