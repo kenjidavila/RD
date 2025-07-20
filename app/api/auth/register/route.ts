@@ -1,25 +1,28 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createAdminClient } from "@/utils/supabase/server"
+import { createAdminClient, createClient } from "@/utils/supabase/server"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createAdminClient()
+    const supabase = await createClient()
+    const admin = createAdminClient()
     const { email, password, nombre, rnc, razonSocial } = await request.json()
 
     if (!email || !password || !nombre || !rnc || !razonSocial) {
       return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 })
     }
 
-    // Registrar usuario desde Admin Client
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Registrar usuario utilizando signUp
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
-      email_confirm: true,
-      user_metadata: {
-        nombre,
-        rnc,
-        razon_social: razonSocial,
+      options: {
+        // Enviar metadata adicional pero evitar requerir confirmación por email
+        data: {
+          nombre,
+          rnc,
+          razon_social: razonSocial,
+        },
       },
     })
 
@@ -31,6 +34,23 @@ export async function POST(request: NextRequest) {
     const userId = authData?.user?.id
     if (!userId) {
       return NextResponse.json({ error: "Error al crear usuario" }, { status: 400 })
+    }
+
+    // Si no se obtuvo sesión (por ejemplo, si se requiere confirmación de correo),
+    // intentar iniciar sesión para obtenerla y que RLS permita las inserciones
+    if (!authData.session) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        await admin.auth.admin.deleteUser(userId)
+        return NextResponse.json(
+          { error: "No se pudo establecer la sesión" },
+          { status: 400 },
+        )
+      }
     }
 
     const { data: empresaData, error: empresaError } = await supabase
@@ -46,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (empresaError) {
       logger.error("Error creando empresa", { error: empresaError, rnc })
+      await admin.auth.admin.deleteUser(userId)
       return NextResponse.json({ error: "Error al crear empresa: " + empresaError.message }, { status: 400 })
     }
 
@@ -61,15 +82,20 @@ export async function POST(request: NextRequest) {
 
     if (perfilError) {
       logger.error("Error creando perfil de usuario", { error: perfilError, userId })
+      await admin.auth.admin.deleteUser(userId)
+      await supabase.from("empresas").delete().eq("id", empresaData.id)
       return NextResponse.json({ error: "Error al crear perfil: " + perfilError.message }, { status: 400 })
     }
 
     logger.info("Usuario registrado exitosamente", { userId, email, empresaId: empresaData.id })
 
     return NextResponse.json({
+      success: true,
       message: "Usuario registrado exitosamente",
-      userId,
-      empresa: empresaData,
+      data: {
+        userId,
+        empresa: empresaData,
+      },
     })
   } catch (error) {
     logger.error("Error en registro", { error })

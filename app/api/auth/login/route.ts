@@ -41,12 +41,15 @@ export async function POST(request: NextRequest) {
       .eq("auth_user_id", data.user.id)
       .single()
 
-    if (usuarioError) {
-      logger.error("Error obteniendo datos de usuario", {
+    if (usuarioError || !usuario) {
+      logger.warn("Datos de usuario no encontrados", {
         error: usuarioError,
         userId: data.user.id,
       })
-      return NextResponse.json({ error: "Error obteniendo datos de usuario" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Registro incompleto, contacta soporte" },
+        { status: 404 },
+      )
     }
 
     logger.info("Login exitoso", {
@@ -57,9 +60,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: "Login exitoso",
-      user: data.user,
-      usuario,
-      session: data.session,
+      data: {
+        user: data.user,
+        usuario,
+        session: data.session,
+      },
     })
   } catch (error) {
     logger.error("Error en login", { error })

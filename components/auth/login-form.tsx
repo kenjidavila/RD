@@ -35,6 +35,7 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           email: formData.email.trim(),
           password: formData.password,
