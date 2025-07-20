@@ -151,6 +151,7 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
       const payload = {
         id: cliente?.id,
         rnc_cedula: formData.rncCedula,
+        tipo_documento: formData.tipoDocumento,
         tipo_cliente: formData.tipoCliente,
         razon_social: formData.razonSocial,
         nombre_comercial: formData.nombreComercial,

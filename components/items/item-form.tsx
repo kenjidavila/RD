@@ -213,7 +213,7 @@ export default function ItemForm({ item, onClose }: ItemFormProps) {
         descripcion_corta: formData.descripcionCorta,
         tipo_item: formData.tipoItem,
         categoria: formData.categoria,
-        precio_unitario: formData.precioVenta,
+        precio_venta: formData.precioVenta,
         unidad_medida: formData.unidadMedida,
         tasa_itbis: formData.tasaItbis,
         exento_itbis: formData.exentoItbis,

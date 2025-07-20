@@ -235,7 +235,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       descripcion_corta: body.descripcion_corta?.trim() || null,
       tipo_item: body.tipo_item || "bien",
       categoria: body.categoria?.trim() || null,
-      precio_unitario: Number.parseFloat(body.precio_unitario) || 0,
+      precio_venta: Number.parseFloat(body.precio_venta) || 0,
       tasa_itbis: body.tasa_itbis || "18",
       activo: body.activo !== false,
     }
@@ -354,9 +354,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
     // Limpiar datos de actualización
     const cleanUpdateData = Object.fromEntries(Object.entries(updateData).filter(([_, value]) => value !== undefined))
 
-    // Convertir precio_unitario a número si existe
-    if (cleanUpdateData.precio_unitario) {
-      cleanUpdateData.precio_unitario = Number.parseFloat(cleanUpdateData.precio_unitario)
+    // Convertir precio_venta a número si existe
+    if (cleanUpdateData.precio_venta) {
+      cleanUpdateData.precio_venta = Number.parseFloat(cleanUpdateData.precio_venta)
     }
 
     const { data, error } = await supabase.from("items").update(cleanUpdateData).eq("id", id).select().single()

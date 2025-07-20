@@ -31,13 +31,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -56,10 +56,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     const limit = Math.min(100, Math.max(1, Number.parseInt(searchParams.get("limit") || "50")))
     const offset = (page - 1) * limit
 
+    const empresaId = usuario.empresa_id
+
     let query = supabase
       .from("clientes")
       .select("*", { count: "exact" })
-      .eq("empresa_id", empresa.id)
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
 
     // Aplicar filtros de búsqueda
@@ -140,13 +142,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuario) {
       return NextResponse.json(
         {
           success: false,
@@ -158,6 +160,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json()
+
+    const empresaId = usuario.empresa_id
 
     // Validar campos requeridos
     if (!body.tipo_cliente || !body.rnc_cedula || !body.razon_social) {
@@ -186,7 +190,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Preparar datos del cliente
     const clienteData = {
-      empresa_id: empresa.id,
+      empresa_id: empresaId,
+      tipo_documento: body.tipo_documento || "RNC",
+      id_extranjero: body.id_extranjero?.trim() || null,
       tipo_cliente: body.tipo_cliente,
       rnc_cedula: body.rnc_cedula.trim(),
       razon_social: body.razon_social.trim(),
