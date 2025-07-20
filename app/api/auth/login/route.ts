@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           activa
         )
       `)
-      .eq("id", data.user.id)
+      .eq("auth_user_id", data.user.id)
       .single()
 
     if (usuarioError) {

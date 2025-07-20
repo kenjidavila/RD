@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
         rnc,
         razon_social: razonSocial,
         activa: true,
+        user_id: userId,
+        owner_id: userId,
       })
       .select()
       .single()
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: perfilError } = await supabase.from("usuarios").insert({
-      id: userId,
+      auth_user_id: userId,
       empresa_id: empresaData.id,
       rnc_cedula: rnc,
       nombre,
