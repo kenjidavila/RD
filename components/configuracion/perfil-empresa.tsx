@@ -12,8 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Building2, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/utils/supabase/client"
-import { getAuthService } from "@/lib/auth"
+
 
 interface EmpresaData {
   id?: string
@@ -84,10 +83,8 @@ export default function PerfilEmpresa() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [currentUser, setCurrentUser] = useState<any>(null)
   const { toast } = useToast()
-  const supabase = createClient()
-  const authService = getAuthService()
+
 
   useEffect(() => {
     cargarDatosEmpresa()
@@ -97,36 +94,22 @@ export default function PerfilEmpresa() {
     try {
       setLoading(true)
 
-      // Obtener usuario actual
-      const user = await authService.getCurrentUser()
-      if (!user) {
+      const response = await fetch("/api/empresa")
+      if (response.ok) {
+        const result = await response.json()
+        if (result.data) {
+          setEmpresa(result.data)
+        }
+      } else if (response.status === 401) {
         toast({
           title: "Error",
           description: "Debe iniciar sesión para acceder a esta función",
           variant: "destructive",
         })
         return
-      }
-
-      const userData = await authService.getUserData(user.id)
-      setCurrentUser(userData)
-
-      if (!userData?.empresa_id) {
-        // Si no hay empresa_id, es una nueva empresa
-        setLoading(false)
-        return
-      }
-
-      // Cargar datos de la empresa
-      const { data, error } = await supabase.from("empresas").select("*").eq("id", userData.empresa_id).single()
-
-      if (error && error.code !== "PGRST116") {
-        // PGRST116 = no rows returned
-        throw error
-      }
-
-      if (data) {
-        setEmpresa(data)
+      } else if (response.status !== 404) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error cargando datos")
       }
     } catch (error: any) {
       console.error("Error cargando datos de empresa:", error)
@@ -143,62 +126,24 @@ export default function PerfilEmpresa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!currentUser) {
-      toast({
-        title: "Error",
-        description: "Debe iniciar sesión para guardar los datos",
-        variant: "destructive",
-      })
-      return
-    }
-
     try {
       setSaving(true)
 
-      const empresaData = {
-        ...empresa,
-        updated_at: new Date().toISOString(),
+      const response = await fetch("/api/empresa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(empresa),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Error guardando datos")
       }
 
-      const authUser = await authService.getCurrentUser()
-      if (!authUser) {
-        throw new Error("Usuario no autenticado")
+      const result = await response.json()
+      if (result.data) {
+        setEmpresa(result.data)
       }
-
-      let result
-
-      if (empresa.id) {
-        // Actualizar empresa existente
-        result = await supabase.from("empresas").update(empresaData).eq("id", empresa.id).select().single()
-      } else {
-        // Crear nueva empresa
-        const newEmpresaData = {
-          ...empresaData,
-          id: crypto.randomUUID(),
-          created_at: new Date().toISOString(),
-          owner_id: authUser.id,
-          user_id: authUser.id,
-        }
-
-        result = await supabase.from("empresas").insert(newEmpresaData).select().single()
-
-        // Actualizar el usuario con el empresa_id
-        if (result.data) {
-          await supabase
-            .from("usuarios")
-            .update({
-              empresa_id: result.data.id,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("auth_user_id", authUser.id)
-        }
-      }
-
-      if (result.error) {
-        throw result.error
-      }
-
-      setEmpresa(result.data)
 
       toast({
         title: "Datos guardados",
