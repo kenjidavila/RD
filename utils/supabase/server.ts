@@ -79,3 +79,42 @@ export function validateServerConfig() {
     errors,
   }
 }
+
+// Obtener el RNC asociado al usuario autenticado
+export async function getUserRnc(
+  supabase: ReturnType<typeof createClient>,
+): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  // Buscar empresa vinculada directamente al usuario
+  const { data: empresaDirecta } = await supabase
+    .from("empresas")
+    .select("rnc")
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (empresaDirecta?.rnc) return empresaDirecta.rnc
+
+  // Buscar a través de la tabla de usuarios
+  const { data: usuario } = await supabase
+    .from("usuarios")
+    .select("empresa_id")
+    .eq("auth_user_id", user.id)
+    .maybeSingle()
+
+  if (usuario?.empresa_id) {
+    const { data: empresa } = await supabase
+      .from("empresas")
+      .select("rnc")
+      .eq("id", usuario.empresa_id)
+      .maybeSingle()
+
+    if (empresa?.rnc) return empresa.rnc
+  }
+
+  return null
+}

@@ -96,7 +96,6 @@ SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key
 
 # App Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_EMPRESA_RNC=tu_rnc_empresa
 LOG_LEVEL=info
 
 # DGII API Configuration

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient, getUserRnc } from "@/utils/supabase/server"
 
 interface ApiResponse {
   success: boolean
@@ -30,11 +30,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
-    // Obtener empresa del usuario
+    // Obtener RNC y empresa del usuario
+    const rnc = await getUserRnc(supabase)
+    if (!rnc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("rnc", rnc)
       .single()
 
     if (empresaError || !empresa) {
@@ -139,11 +151,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    // Obtener empresa del usuario
+    // Obtener RNC y empresa del usuario
+    const rnc = await getUserRnc(supabase)
+    if (!rnc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("rnc", rnc)
       .single()
 
     if (empresaError || !empresa) {

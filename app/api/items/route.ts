@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient, getUserRnc } from "@/utils/supabase/server"
 
 interface ApiResponse {
   success: boolean
@@ -30,14 +30,25 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("id", user.id)
+    // Obtener RNC y empresa del usuario
+    const rnc = await getUserRnc(supabase)
+    if (!rnc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+    const { data: empresa, error: empresaError } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("rnc", rnc)
       .single()
 
-    if (usuarioError || !usuario) {
+    if (empresaError || !empresa) {
       return NextResponse.json(
         {
           success: false,
@@ -48,7 +59,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
-    const empresaId = usuario.empresa_id
+    const empresaId = empresa.id
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
@@ -145,14 +156,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("id", user.id)
+    // Obtener RNC y empresa del usuario
+    const rnc = await getUserRnc(supabase)
+    if (!rnc) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+    const { data: empresa, error: empresaError } = await supabase
+      .from("empresas")
+      .select("id")
+      .eq("rnc", rnc)
       .single()
 
-    if (usuarioError || !usuario) {
+    if (empresaError || !empresa) {
       return NextResponse.json(
         {
           success: false,
@@ -163,7 +185,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    const empresaId = usuario.empresa_id
+    const empresaId = empresa.id
 
     const body = await request.json()
 

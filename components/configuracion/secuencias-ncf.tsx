@@ -47,11 +47,24 @@ export default function SecuenciasNCF() {
   const [secuencias, setSecuencias] = useState<SecuenciaNcf[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [empresaRnc, setEmpresaRnc] = useState<string>("")
   const { toast } = useToast()
 
   useEffect(() => {
+    obtenerRnc()
     cargarSecuencias()
   }, [])
+
+  const obtenerRnc = async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      const json = await res.json()
+      const rnc = json?.usuario?.empresas?.rnc
+      if (rnc) setEmpresaRnc(rnc)
+    } catch (e) {
+      console.error("Error obteniendo RNC", e)
+    }
+  }
 
   const cargarSecuencias = async () => {
     try {
@@ -98,7 +111,7 @@ export default function SecuenciasNCF() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ncf: `E${process.env.NEXT_PUBLIC_EMPRESA_RNC || "123456789"}${tipo}${ncf}`,
+          ncf: `E${empresaRnc || "000000000"}${tipo}${ncf}`,
           tipo_comprobante: tipo,
         }),
       })
@@ -406,7 +419,7 @@ export default function SecuenciasNCF() {
               <div className="bg-gray-50 p-3 rounded-md">
                 <Label className="text-sm font-medium">e-NCF Generado:</Label>
                 <p className="text-sm font-mono">
-                  E{process.env.NEXT_PUBLIC_EMPRESA_RNC || "123456789"}
+                  E{empresaRnc || "000000000"}
                   {secuencia.tipo_comprobante}
                   {secuencia.secuencia_inicial}
                 </p>
