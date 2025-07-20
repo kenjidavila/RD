@@ -36,10 +36,12 @@ export interface Usuario {
 
 export interface Empresa {
   id: string
+  user_id: string
   rnc: string
   razon_social: string
   nombre_comercial?: string
   email?: string
+  email_contacto?: string
   telefono?: string
   direccion?: string
   provincia?: string

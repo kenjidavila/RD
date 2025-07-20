@@ -79,6 +79,7 @@ export interface ECFData {
 
 export interface EmpresaData {
   empresa_id?: string
+  user_id?: string
   rnc: string
   razonSocial: string
   nombreComercial?: string
@@ -87,6 +88,7 @@ export interface EmpresaData {
   provincia: string
   telefono?: string
   email?: string
+  emailContacto?: string
   website?: string
   logo?: string
   configuracion?: Record<string, any>

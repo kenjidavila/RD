@@ -43,8 +43,10 @@ export async function POST(request: NextRequest) {
     const { data: empresaData, error: empresaError } = await supabase
       .from("empresas")
       .insert({
+        user_id: rnc,
         rnc,
         razon_social: razonSocial,
+        email_contacto: email,
         activa: true,
       })
       .select()

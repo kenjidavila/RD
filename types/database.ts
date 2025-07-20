@@ -490,10 +490,12 @@ export interface Database {
       empresas: {
         Row: {
           id: string
+          user_id: string
           rnc: string
           razon_social: string
           nombre_comercial: string | null
           email: string | null
+          email_contacto: string | null
           telefono: string | null
           direccion: string | null
           provincia: string | null
@@ -510,10 +512,12 @@ export interface Database {
         }
         Insert: {
           id?: string
+          user_id: string
           rnc: string
           razon_social: string
           nombre_comercial?: string | null
           email?: string | null
+          email_contacto?: string | null
           telefono?: string | null
           direccion?: string | null
           provincia?: string | null
@@ -530,10 +534,12 @@ export interface Database {
         }
         Update: {
           id?: string
+          user_id?: string
           rnc?: string
           razon_social?: string
           nombre_comercial?: string | null
           email?: string | null
+          email_contacto?: string | null
           telefono?: string | null
           direccion?: string | null
           provincia?: string | null

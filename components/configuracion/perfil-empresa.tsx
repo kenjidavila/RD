@@ -17,12 +17,14 @@ import { getAuthService } from "@/lib/auth"
 
 interface EmpresaData {
   id?: string
+  user_id?: string
   razon_social: string
   nombre_comercial: string
   rnc: string
   direccion: string
   telefono: string
   email: string
+  email_contacto?: string
   provincia: string
   municipio: string
   sector: string

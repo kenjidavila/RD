@@ -69,6 +69,7 @@ interface ECFData {
 }
 
 interface EmpresaData {
+  user_id?: string
   rnc: string
   razonSocial: string
   nombreComercial?: string
@@ -77,6 +78,7 @@ interface EmpresaData {
   provincia?: string
   telefono?: string
   email?: string
+  emailContacto?: string
 }
 
 interface Cliente {

@@ -30,14 +30,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
-    // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    // Obtener empresa del usuario usando su registro en la tabla usuarios
+    const { data: usuarioEmp, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuarioEmp) {
       return NextResponse.json(
         {
           success: false,
@@ -47,6 +47,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         { status: 404 },
       )
     }
+
+    const empresaId = usuarioEmp.empresa_id
 
     const { searchParams } = new URL(request.url)
     const search = searchParams.get("search") || ""
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     let query = supabase
       .from("clientes")
       .select("*", { count: "exact" })
-      .eq("empresa_id", empresa.id)
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
 
     // Aplicar filtros de búsqueda
@@ -186,7 +188,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Preparar datos del cliente
     const clienteData = {
-      empresa_id: empresa.id,
+      empresa_id: empresaId,
       tipo_cliente: body.tipo_cliente,
       rnc_cedula: body.rnc_cedula.trim(),
       razon_social: body.razon_social.trim(),

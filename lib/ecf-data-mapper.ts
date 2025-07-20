@@ -62,12 +62,14 @@ export interface ECFDetalle {
 
 export interface EmpresaData {
   id: string
+  user_id: string
   rnc: string
   razonSocial: string
   nombreComercial?: string
   direccion?: string
   telefono?: string
   email: string
+  emailContacto?: string
   provincia?: string
   municipio?: string
   logoUrl?: string
