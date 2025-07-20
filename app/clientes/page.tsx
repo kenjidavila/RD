@@ -7,6 +7,7 @@ import ClienteForm from "@/components/clientes/cliente-form"
 import { Button } from "@/components/ui/button"
 import { Plus, Users } from "lucide-react"
 import { Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 export default function ClientesPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -16,9 +17,12 @@ export default function ClientesPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authToken = localStorage.getItem("auth_token")
-      if (!authToken) {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) {
         router.push("/")
         return
       }
