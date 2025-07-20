@@ -44,6 +44,32 @@ export class SupabaseServerUtils {
     return usuario.empresas
   }
 
+  // Obtener usuario autenticado y su empresa asociada
+  static async getSessionAndEmpresa() {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      throw new Error("Usuario no autenticado")
+    }
+
+    const { data: usuario, error: userError } = await supabase
+      .from("usuarios")
+      .select("empresa_id, empresas(*)")
+      .eq("id", user.id)
+      .single()
+
+    if (userError || !usuario || !usuario.empresas) {
+      throw new Error("Empresa no encontrada")
+    }
+
+    return { user, empresa: usuario.empresas }
+  }
+
   // Verificar permisos de usuario
   static async checkUserPermissions(userId: string, requiredRole?: string) {
     const supabase = await createClient()

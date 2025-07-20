@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase"
+import { createServerClient } from "@/lib/supabase-server"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 
 interface AprobacionComercialRequest {
   eNCF: string
@@ -14,13 +15,17 @@ export async function POST(request: NextRequest) {
   try {
     const body: AprobacionComercialRequest = await request.json()
 
-    const { eNCF, emisorRNC, tipoAprobacion, motivo, fechaAprobacion, observaciones } = body
+    const { eNCF, tipoAprobacion, motivo, fechaAprobacion, observaciones } = body
 
-    if (!eNCF || !emisorRNC || !tipoAprobacion || !motivo) {
+    if (!eNCF || !tipoAprobacion || !motivo) {
       return NextResponse.json({ success: false, error: "Datos requeridos faltantes" }, { status: 400 })
     }
 
-    const supabase = createClient()
+    // Obtener usuario y empresa asociada
+    const { user, empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const emisorRNC = empresa.rnc
+
+    const supabase = await createServerClient()
 
     // Verificar que el e-CF existe
     const { data: comprobante, error: consultaError } = await supabase
@@ -94,9 +99,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const encf = searchParams.get("encf")
-    const emisorRNC = searchParams.get("emisorRNC")
+    const { empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const emisorRNC = empresa.rnc
 
-    const supabase = createClient()
+    const supabase = await createServerClient()
 
     let query = supabase.from("aprobaciones_comerciales").select("*").order("fecha_procesamiento", { ascending: false })
 
@@ -104,9 +110,7 @@ export async function GET(request: NextRequest) {
       query = query.eq("encf", encf)
     }
 
-    if (emisorRNC) {
-      query = query.eq("emisor_rnc", emisorRNC)
-    }
+    query = query.eq("emisor_rnc", emisorRNC)
 
     const { data, error } = await query
 

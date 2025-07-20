@@ -2,20 +2,26 @@ import { type NextRequest, NextResponse } from "next/server"
 import { PDFStorageService } from "@/lib/pdf-storage-service"
 import { PDFGenerator } from "@/lib/pdf-generator"
 import { ECFDataMapper } from "@/lib/ecf-data-mapper"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
+import { createServerClient } from "@/lib/supabase-server"
 import type { PDFGenerationRequest } from "@/types/ecf-types"
 
 export async function POST(request: NextRequest) {
   try {
     const body: PDFGenerationRequest = await request.json()
-    const { ecfData, empresaData, tipo = "final" } = body
+    const { ecfData, empresaData: bodyEmpresa, tipo = "final" } = body
 
     // Validar datos de entrada
     if (!ecfData || typeof ecfData !== "object") {
       return NextResponse.json({ error: "ECF data is required and must be a valid object" }, { status: 400 })
     }
 
-    if (!empresaData || typeof empresaData !== "object") {
-      return NextResponse.json({ error: "Company data is required and must be a valid object" }, { status: 400 })
+    // Obtener usuario y empresa asociada
+    const { user, empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const empresaData = bodyEmpresa && typeof bodyEmpresa === "object" ? { ...bodyEmpresa } : {
+      id: empresa.id,
+      rnc: empresa.rnc,
+      razonSocial: empresa.razon_social,
     }
 
     // Para PDFs finales, validar que tengan trackId
@@ -23,11 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "TrackID is required for final PDF storage" }, { status: 400 })
     }
 
-    // Obtener userId del header o contexto de autenticación
-    const userId = request.headers.get("x-user-id")
-    if (!userId) {
-      return NextResponse.json({ error: "User authentication required" }, { status: 401 })
-    }
+    const userId = user.id
 
     // Validar integridad de datos
     const validation = ECFDataMapper.validateECFData(ecfData)

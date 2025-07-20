@@ -1,21 +1,28 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PDFGenerator } from "@/lib/pdf-generator"
 import { ECFDataMapper } from "@/lib/ecf-data-mapper"
+import { PDFStorageService } from "@/lib/pdf-storage-service"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 import type { PDFGenerationRequest } from "@/types/ecf-types"
 
 export async function POST(request: NextRequest) {
   try {
     const body: PDFGenerationRequest = await request.json()
-    const { ecfData, empresaData, filename } = body
+    const { ecfData, empresaData: bodyEmpresa, filename } = body
+
+    const { user, empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const empresaData = bodyEmpresa && typeof bodyEmpresa === "object" ? { ...bodyEmpresa } : {
+      id: empresa.id,
+      rnc: empresa.rnc,
+      razonSocial: empresa.razon_social,
+    }
 
     // Validar datos de entrada
     if (!ecfData || typeof ecfData !== "object") {
       return NextResponse.json({ error: "ECF data is required and must be a valid object" }, { status: 400 })
     }
 
-    if (!empresaData || typeof empresaData !== "object") {
-      return NextResponse.json({ error: "Company data is required and must be a valid object" }, { status: 400 })
-    }
+    // empresaData ya preparado arriba
 
     // Validar integridad de datos
     const validation = ECFDataMapper.validateECFData(ecfData)
@@ -68,6 +75,10 @@ export async function POST(request: NextRequest) {
     if (!pdfBuffer || pdfBuffer.length === 0) {
       return NextResponse.json({ error: "Generated PDF is empty or invalid" }, { status: 500 })
     }
+
+    // Almacenar PDF como borrador
+    const storageService = new PDFStorageService()
+    await storageService.storePDF(pdfBuffer, previewData, empresaData, user.id, "preview")
 
     // Generar nombre de archivo para preview
     const sanitizeFilename = (name: string): string => {

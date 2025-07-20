@@ -176,10 +176,10 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
         return
       }
 
-      // Buscar empresa del usuario actual
-      const { data: empresa, error: empresaError } = await supabase
-        .from("empresas")
-        .select("*")
+      // Buscar empresa asociada al usuario actual
+      const { data: usuario, error: empresaError } = await supabase
+        .from("usuarios")
+        .select("empresa_id, empresas(*)")
         .eq("id", user.id)
         .single()
 
@@ -201,6 +201,8 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
         }
         return
       }
+
+      const empresa = usuario?.empresas
 
       if (empresa) {
         const empresaFormatted: EmpresaData = {
