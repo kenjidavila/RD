@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createClient } from "@/utils/supabase/server"
 import { logger } from "@/lib/logger"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
     const { email, password } = await request.json()
 
     if (!email || !password) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           activa
         )
       `)
-      .eq("id", data.user.id)
+      .eq("auth_user_id", data.user.id)
       .single()
 
     if (usuarioError) {

@@ -86,7 +86,7 @@ npm install
 
 ### 3. Configurar Variables de Entorno
 
-Crear archivo `.env.local`:
+Copia el archivo `.env.example` a `.env.local` y completa los valores:
 
 \`\`\`env
 # Supabase Configuration

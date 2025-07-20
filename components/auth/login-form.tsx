@@ -43,14 +43,11 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
 
       console.log("📥 Response status:", response.status)
 
+      const result = await response.json().catch(() => ({}))
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const result = await response.json()
-      console.log("📥 Respuesta login:", result)
-
-      if (result.error) {
+        setError(result.error || `Error ${response.status}`)
+      } else if (result.error) {
         setError(result.error)
       } else {
         console.log("✅ Login exitoso")

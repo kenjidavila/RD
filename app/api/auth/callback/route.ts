@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createClient } from "@/utils/supabase/server"
 import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const next = searchParams.get("next") ?? "/dashboard"
 
     if (code) {
-      const supabase = await createServerClient()
+      const supabase = await createClient()
       const { error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (!error) {

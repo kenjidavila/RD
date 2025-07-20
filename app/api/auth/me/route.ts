@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase-server"
+import { createClient } from "@/utils/supabase/server"
 import { logger } from "@/lib/logger"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           activa
         )
       `)
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .single()
 
     if (usuarioError) {
