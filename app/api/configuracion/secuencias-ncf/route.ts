@@ -13,10 +13,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    const { data: usuarioEmp, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
+      .single()
+
+    if (usuarioError || !usuarioEmp) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const empresaId = usuarioEmp.empresa_id
+
     const { data: secuencias, error } = await supabase
       .from("configuracion_secuencias_ncf")
       .select("*")
-      .eq("empresa_id", user.id)
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -43,6 +55,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    const { data: usuarioEmp, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
+      .single()
+
+    if (usuarioError || !usuarioEmp) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const empresaId = usuarioEmp.empresa_id
+
     const body = await request.json()
     const { secuencias } = body
 
@@ -52,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Validar y procesar cada secuencia
     const secuenciasParaGuardar = secuencias.map((sec) => ({
-      empresa_id: user.id,
+      empresa_id: empresaId,
       tipo_comprobante: sec.tipo_comprobante,
       secuencia_inicial: sec.secuencia_inicial,
       secuencia_final: sec.secuencia_final,
@@ -64,7 +88,7 @@ export async function POST(request: NextRequest) {
     }))
 
     // Eliminar secuencias existentes para esta empresa
-    await supabase.from("configuracion_secuencias_ncf").delete().eq("empresa_id", user.id)
+    await supabase.from("configuracion_secuencias_ncf").delete().eq("empresa_id", empresaId)
 
     // Insertar nuevas secuencias
     const { error: insertError } = await supabase.from("configuracion_secuencias_ncf").insert(secuenciasParaGuardar)

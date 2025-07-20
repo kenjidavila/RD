@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { BackupService } from "@/lib/backup-service"
+import { createServerClient } from "@/lib/supabase-server"
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,10 +15,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // For now, return a mock response since we don't have authentication set up
-    const mockUserId = "mock-user-id"
+    const supabase = await createServerClient()
 
-    const result = await BackupService.crearBackupCompleto(mockUserId)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const result = await BackupService.crearBackupCompleto(user.id)
 
     if (result.success) {
       return NextResponse.json({
@@ -59,10 +68,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // For now, return a mock response
-    const mockUserId = "mock-user-id"
+    const supabase = await createServerClient()
 
-    const result = await BackupService.listarBackups(mockUserId)
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const result = await BackupService.listarBackups(user.id)
 
     if (result.success) {
       return NextResponse.json({

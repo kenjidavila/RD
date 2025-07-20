@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,6 +28,7 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const router = useRouter()
   const [formData, setFormData] = useState({
     nombre: "",
     apellidos: "",
@@ -128,7 +130,28 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
 
       if (result.success) {
         console.log("✅ Registro exitoso")
-        alert("¡Registro exitoso! Ya puedes iniciar sesión con tus credenciales.")
+        // Iniciar sesión automáticamente y redirigir al dashboard
+        const loginResp = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: registroData.email,
+            password: registroData.password,
+          }),
+        })
+
+        if (loginResp.ok) {
+          const loginData = await loginResp.json()
+          if (loginData.success) {
+            router.push("/dashboard")
+            router.refresh()
+            return
+          }
+        }
+
+        alert("¡Registro exitoso! Inicia sesión con tus credenciales.")
         onBackToLogin()
       } else {
         setErrors({ general: result.message || "Error en el registro" })

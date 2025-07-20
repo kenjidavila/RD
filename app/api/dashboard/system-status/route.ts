@@ -15,11 +15,24 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    // Obtener empresa del usuario
+    const { data: usuarioEmp, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
+      .single()
+
+    if (usuarioError || !usuarioEmp) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const empresaId = usuarioEmp.empresa_id
+
     // Obtener estado de certificados digitales reales
     const { data: certificados, error: errorCertificados } = await supabase
       .from("certificados_digitales")
       .select("fecha_vencimiento, activo")
-      .eq("empresa_id", user.id)
+      .eq("empresa_id", empresaId)
 
     if (errorCertificados) {
       console.error("Error obteniendo certificados:", errorCertificados)

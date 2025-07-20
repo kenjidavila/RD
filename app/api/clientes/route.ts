@@ -141,14 +141,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       )
     }
 
-    // Obtener empresa del usuario
-    const { data: empresa, error: empresaError } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
+    // Obtener empresa del usuario usando su registro en la tabla usuarios
+    const { data: usuarioEmp, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("id", user.id)
       .single()
 
-    if (empresaError || !empresa) {
+    if (usuarioError || !usuarioEmp) {
       return NextResponse.json(
         {
           success: false,
@@ -158,6 +158,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         { status: 404 },
       )
     }
+
+    const empresaId = usuarioEmp.empresa_id
 
     const body = await request.json()
 
