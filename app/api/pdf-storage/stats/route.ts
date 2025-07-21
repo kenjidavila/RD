@@ -4,20 +4,14 @@ import { PDFStorageService } from "@/lib/pdf-storage-service"
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const empresaId = searchParams.get("empresa_id")
-
-    if (!empresaId) {
-      return NextResponse.json({ error: "empresa_id is required" }, { status: 400 })
-    }
-
-    // Obtener userId del header para validar acceso
+    // Puede recibirse empresa_id para validaciones futuras
     const userId = request.headers.get("x-user-id")
     if (!userId) {
       return NextResponse.json({ error: "User authentication required" }, { status: 401 })
     }
 
     const storageService = new PDFStorageService()
-    const result = await storageService.getStorageStats(empresaId)
+    const result = await storageService.getStorageStats(userId)
 
     if (!result.success) {
       return NextResponse.json(

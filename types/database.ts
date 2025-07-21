@@ -652,42 +652,75 @@ export interface Database {
       pdf_storage: {
         Row: {
           id: string
-          empresa_id: string
-          comprobante_id: string | null
+          user_id: string
+          empresa_id: string | null
           track_id: string | null
+          e_ncf: string | null
+          tipo_documento: string
           filename: string
           file_path: string
           file_size: number
           mime_type: string
-          metadata: Json | null
-          created_at: string
+          emisor_rnc: string | null
+          emisor_nombre: string | null
+          comprador_rnc: string | null
+          comprador_nombre: string | null
+          monto_total: number | null
+          fecha_emision: string | null
+          download_count: number
+          max_downloads: number
           expires_at: string | null
+          created_at: string
+          updated_at: string
+          last_accessed_at: string | null
         }
         Insert: {
           id?: string
-          empresa_id: string
-          comprobante_id?: string | null
+          user_id: string
+          empresa_id?: string | null
           track_id?: string | null
+          e_ncf?: string | null
+          tipo_documento: string
           filename: string
           file_path: string
           file_size: number
-          mime_type: string
-          metadata?: Json | null
-          created_at?: string
+          mime_type?: string
+          emisor_rnc?: string | null
+          emisor_nombre?: string | null
+          comprador_rnc?: string | null
+          comprador_nombre?: string | null
+          monto_total?: number | null
+          fecha_emision?: string | null
+          download_count?: number
+          max_downloads?: number
           expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+          last_accessed_at?: string | null
         }
         Update: {
           id?: string
-          empresa_id?: string
-          comprobante_id?: string | null
+          user_id?: string
+          empresa_id?: string | null
           track_id?: string | null
+          e_ncf?: string | null
+          tipo_documento?: string
           filename?: string
           file_path?: string
           file_size?: number
           mime_type?: string
-          metadata?: Json | null
-          created_at?: string
+          emisor_rnc?: string | null
+          emisor_nombre?: string | null
+          comprador_rnc?: string | null
+          comprador_nombre?: string | null
+          monto_total?: number | null
+          fecha_emision?: string | null
+          download_count?: number
+          max_downloads?: number
           expires_at?: string | null
+          created_at?: string
+          updated_at?: string
+          last_accessed_at?: string | null
         }
         Relationships: [
           {

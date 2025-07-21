@@ -105,7 +105,12 @@ export class PDFStorageService {
   static async retrievePDF(
     id: string,
     userId: string,
-  ): Promise<{ success: boolean; data?: Uint8Array; filename?: string; error?: string }> {
+  ): Promise<{
+    success: boolean
+    pdfBuffer?: Uint8Array
+    record?: PDFStorageRecord
+    error?: string
+  }> {
     try {
       // Obtener metadatos del archivo
       const supabase = this.client
@@ -155,11 +160,128 @@ export class PDFStorageService {
 
       return {
         success: true,
-        data: uint8Array,
-        filename: metadata.filename,
+        pdfBuffer: uint8Array,
+        record: metadata as PDFStorageRecord,
       }
     } catch (error) {
       console.error("Error in retrievePDF:", error)
+      return { success: false, error: "Error interno del servidor" }
+    }
+  }
+
+  static async listUserPDFs(
+    userId: string,
+    filters: {
+      tipo_pdf?: "preview" | "final"
+      estado?: "disponible" | "descargado" | "expirado"
+      desde?: string
+      hasta?: string
+      limit?: number
+      offset?: number
+    } = {},
+  ): Promise<{
+    success: boolean
+    pdfs?: PDFStorageRecord[]
+    total?: number
+    error?: string
+  }> {
+    try {
+      const supabase = this.client
+
+      let query = supabase
+        .from("pdf_storage")
+        .select("*", { count: "exact" })
+        .eq("user_id", userId)
+
+      if (filters.tipo_pdf) {
+        query = query.eq("tipo_documento", filters.tipo_pdf)
+      }
+
+      const nowIso = new Date().toISOString()
+      if (filters.estado === "expirado") {
+        query = query.lte("expires_at", nowIso)
+      } else if (filters.estado === "disponible") {
+        query = query.gt("expires_at", nowIso)
+      }
+
+      if (filters.desde) {
+        query = query.gte("created_at", filters.desde)
+      }
+      if (filters.hasta) {
+        query = query.lte("created_at", filters.hasta)
+      }
+
+      const limit = filters.limit ?? 20
+      const offset = filters.offset ?? 0
+      query = query.range(offset, offset + limit - 1).order("created_at", { ascending: false })
+
+      const { data, count, error } = await query
+
+      if (error) {
+        console.error("Error listing PDFs:", error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, pdfs: data as PDFStorageRecord[], total: count ?? 0 }
+    } catch (err) {
+      console.error("Error in listUserPDFs:", err)
+      return { success: false, error: "Error interno del servidor" }
+    }
+  }
+
+  static async getPDFByTrackId(trackId: string, tipo: "preview" | "final") {
+    try {
+      const supabase = this.client
+      const { data, error } = await supabase
+        .from("pdf_storage")
+        .select("*")
+        .eq("track_id", trackId)
+        .eq("tipo_documento", tipo)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error || !data) {
+        return { success: false, error: error?.message || "No encontrado" }
+      }
+
+      return { success: true, record: data as PDFStorageRecord }
+    } catch (err) {
+      console.error("Error in getPDFByTrackId:", err)
+      return { success: false, error: "Error interno del servidor" }
+    }
+  }
+
+  static async cleanupExpiredPDFs() {
+    try {
+      const supabase = this.client
+      const { data, error } = await supabase.rpc("cleanup_expired_pdfs")
+      if (error) {
+        console.error("Error cleaning PDFs:", error)
+        return { success: false, error: error.message }
+      }
+      return { success: true, cleaned: data as number }
+    } catch (err) {
+      console.error("Error in cleanupExpiredPDFs:", err)
+      return { success: false, error: "Error interno del servidor" }
+    }
+  }
+
+  static async getStorageStats(userId: string) {
+    try {
+      const supabase = this.client
+      const { data, error } = await supabase.rpc("get_pdf_storage_stats", {
+        p_user_id: userId,
+      })
+
+      if (error) {
+        console.error("Error getting storage stats:", error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true, stats: data }
+    } catch (err) {
+      console.error("Error in getStorageStats:", err)
       return { success: false, error: "Error interno del servidor" }
     }
   }
