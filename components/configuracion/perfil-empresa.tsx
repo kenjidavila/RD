@@ -26,7 +26,8 @@ interface EmpresaData {
   municipio: string
   sector: string
   actividad_economica: string
-  regimen_tributario: "ordinario" | "simplificado" | "pst"
+  // Valores permitidos por la restricción de la base de datos
+  regimen_tributario: "Ordinario" | "RST" | "PST"
   logo_url?: string
   created_at?: string
   updated_at?: string
@@ -79,7 +80,7 @@ export default function PerfilEmpresa() {
     municipio: "",
     sector: "",
     actividad_economica: "",
-    regimen_tributario: "ordinario",
+    regimen_tributario: "Ordinario",
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -125,6 +126,37 @@ export default function PerfilEmpresa() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const {
+      razon_social,
+      rnc,
+      telefono,
+      email,
+      provincia,
+      municipio,
+      actividad_economica,
+      regimen_tributario,
+      direccion,
+    } = empresa
+
+    if (
+      !razon_social ||
+      !rnc ||
+      !telefono ||
+      !email ||
+      !provincia ||
+      !municipio ||
+      !actividad_economica ||
+      !regimen_tributario ||
+      !direccion
+    ) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
       setSaving(true)
@@ -317,9 +349,9 @@ export default function PerfilEmpresa() {
                   <SelectValue placeholder="Seleccione un régimen" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ordinario">Ordinario</SelectItem>
-                  <SelectItem value="simplificado">Simplificado</SelectItem>
-                  <SelectItem value="pst">PST (Procedimiento Simplificado de Tributación)</SelectItem>
+                  <SelectItem value="Ordinario">Ordinario</SelectItem>
+                  <SelectItem value="RST">RST (Régimen Simplificado de Tributación)</SelectItem>
+                  <SelectItem value="PST">PST (Procedimiento Simplificado de Tributación)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
