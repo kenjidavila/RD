@@ -27,8 +27,8 @@ export async function GET(request: NextRequest, { params }: { params: { trackId:
       success: true,
       pdf: result.record,
       download_url: `/api/pdf-storage/retrieve/${result.record?.id}`,
-      expires_at: result.record?.fecha_expiracion,
-      downloads_remaining: Math.max(0, 10 - (result.record?.descargas_count || 0)),
+      expires_at: result.record?.expires_at,
+      downloads_remaining: Math.max(0, (result.record?.max_downloads || 10) - (result.record?.download_count || 0)),
     })
   } catch (error) {
     console.error("Unexpected error getting PDF by TrackID:", error)

@@ -40,10 +40,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "X-Download-Options": "noopen",
-        "X-PDF-Type": result.record.tipo_pdf,
-        "X-TrackID": result.record.track_id,
-        "X-Downloads-Count": result.record.descargas_count.toString(),
-        "X-Expires-At": result.record.fecha_expiracion,
+        "X-PDF-Type": result.record.tipo_documento,
+        "X-TrackID": result.record.track_id || "",
+        "X-Downloads-Count": result.record.download_count.toString(),
+        "X-Expires-At": result.record.expires_at || "",
       },
     })
   } catch (error) {
