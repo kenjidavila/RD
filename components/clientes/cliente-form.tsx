@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -64,6 +65,8 @@ interface ClienteFormProps {
 }
 
 export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
+  const router = useRouter()
+  const [empresaOk, setEmpresaOk] = useState<boolean | null>(null)
   const [formData, setFormData] = useState<Cliente>({
     rncCedula: "",
     tipoDocumento: "RNC",
@@ -90,6 +93,24 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
   const [direcciones, setDirecciones] = useState<Direccion[]>([])
   const [errors, setErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  useEffect(() => {
+    const checkEmpresa = async () => {
+      try {
+        const res = await fetch("/api/empresa")
+        if (res.ok) {
+          setEmpresaOk(true)
+        } else {
+          setEmpresaOk(false)
+          router.push("/perfil-empresa")
+        }
+      } catch {
+        setEmpresaOk(false)
+        router.push("/perfil-empresa")
+      }
+    }
+
+    checkEmpresa()
+  }, [router])
 
   const provincias = [
     "Distrito Nacional",
@@ -237,6 +258,10 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
     const updated = [...direcciones]
     updated[index] = { ...updated[index], [field]: value }
     setDirecciones(updated)
+  }
+
+  if (empresaOk !== true) {
+    return null
   }
 
   return (

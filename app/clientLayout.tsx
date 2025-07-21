@@ -45,6 +45,17 @@ export default function ClientLayout({
           setIsAuthenticated(true)
           setUserData(user)
 
+          // Verificar que el usuario tenga empresa asociada
+          try {
+            const empresaRes = await fetch("/api/empresa")
+            if (empresaRes.status === 404 && pathname !== "/perfil-empresa") {
+              router.push("/perfil-empresa")
+              return
+            }
+          } catch (err) {
+            console.error("Error comprobando empresa:", err)
+          }
+
           // Guardar en localStorage para compatibilidad con header
           localStorage.setItem("auth_token", "supabase_session")
           localStorage.setItem(

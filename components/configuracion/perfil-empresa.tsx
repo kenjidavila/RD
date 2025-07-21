@@ -85,10 +85,12 @@ export default function PerfilEmpresa() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
+  const [ownerId, setOwnerId] = useState<string | null>(null)
 
 
   useEffect(() => {
     cargarDatosEmpresa()
+    obtenerOwnerId()
   }, [])
 
   const cargarDatosEmpresa = async () => {
@@ -121,6 +123,18 @@ export default function PerfilEmpresa() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const obtenerOwnerId = async () => {
+    try {
+      const res = await fetch("/api/auth/me")
+      if (res.ok) {
+        const data = await res.json()
+        setOwnerId(data.user.id)
+      }
+    } catch (err) {
+      console.error("Error obteniendo owner_id:", err)
     }
   }
 
@@ -164,7 +178,7 @@ export default function PerfilEmpresa() {
       const response = await fetch("/api/perfil-empresa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(empresa),
+        body: JSON.stringify({ ...empresa, owner_id: ownerId }),
       })
 
       if (!response.ok) {

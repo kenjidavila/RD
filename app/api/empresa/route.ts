@@ -57,7 +57,11 @@ export async function POST(
     if (currentEmpresa) {
       ;({ data: empresa, error } = await supabase
         .from("empresas")
-        .update({ ...body, updated_at: new Date().toISOString() })
+        .update({
+          ...body,
+          owner_id: user.id,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", currentEmpresa.id)
         .select()
         .single())
