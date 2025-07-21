@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,8 @@ interface ItemFormProps {
 }
 
 export default function ItemForm({ item, onClose }: ItemFormProps) {
+  const router = useRouter()
+  const [empresaOk, setEmpresaOk] = useState<boolean | null>(null)
   const [formData, setFormData] = useState<Item>({
     codigo: "",
     codigoBarras: "",
@@ -96,6 +99,25 @@ export default function ItemForm({ item, onClose }: ItemFormProps) {
   const [errors, setErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [generatingCode, setGeneratingCode] = useState(false)
+
+  useEffect(() => {
+    const checkEmpresa = async () => {
+      try {
+        const res = await fetch("/api/empresa")
+        if (res.ok) {
+          setEmpresaOk(true)
+        } else {
+          setEmpresaOk(false)
+          router.push("/perfil-empresa")
+        }
+      } catch {
+        setEmpresaOk(false)
+        router.push("/perfil-empresa")
+      }
+    }
+
+    checkEmpresa()
+  }, [router])
 
   const categorias = [
     "General",
@@ -260,6 +282,10 @@ export default function ItemForm({ item, onClose }: ItemFormProps) {
     } finally {
       setSaving(false)
     }
+  }
+
+  if (empresaOk !== true) {
+    return null
   }
 
   return (

@@ -308,6 +308,25 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       )
     }
 
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
+    const empresaId = usuario.empresa_id
+
     const body = await request.json()
     const { id, ...updateData } = body
 
@@ -329,6 +348,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       .from("clientes")
       .update(cleanUpdateData)
       .eq("id", id)
+      .eq("empresa_id", empresaId)
       .select()
       .single()
 
@@ -445,7 +465,30 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
       )
     }
 
-    const { error } = await supabase.from("clientes").delete().eq("id", id)
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Empresa no encontrada",
+          errors: ["No se encontró la empresa asociada al usuario"],
+        },
+        { status: 404 },
+      )
+    }
+
+    const empresaId = usuario.empresa_id
+
+    const { error } = await supabase
+      .from("clientes")
+      .delete()
+      .eq("id", id)
+      .eq("empresa_id", empresaId)
 
     if (error) {
       return NextResponse.json(
