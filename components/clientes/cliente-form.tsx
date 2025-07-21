@@ -26,7 +26,7 @@ interface Cliente {
   provincia?: string
   municipio?: string
   pais?: string
-  tipoCliente: string
+  tipoCliente: "persona_fisica" | "persona_juridica" | "extranjero"
   limiteCredito: number
   diasCredito: number
   descuentoGeneral: number
@@ -75,7 +75,7 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
     provincia: "",
     municipio: "",
     pais: "República Dominicana",
-    tipoCliente: "regular",
+    tipoCliente: "persona_fisica",
     limiteCredito: 0,
     diasCredito: 0,
     descuentoGeneral: 0,
@@ -347,10 +347,9 @@ export default function ClienteForm({ cliente, onClose }: ClienteFormProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="regular">Regular</SelectItem>
-                      <SelectItem value="vip">VIP</SelectItem>
-                      <SelectItem value="corporativo">Corporativo</SelectItem>
-                      <SelectItem value="gobierno">Gobierno</SelectItem>
+                      <SelectItem value="persona_fisica">Persona Física</SelectItem>
+                      <SelectItem value="persona_juridica">Persona Jurídica</SelectItem>
+                      <SelectItem value="extranjero">Extranjero</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
