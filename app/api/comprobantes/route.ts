@@ -150,6 +150,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Preparar datos del comprobante
     const comprobanteData = {
       empresa_id: empresa.id,
+      usuario_id: user.id,
       e_ncf: eNCF,
       tipo_comprobante,
       fecha_emision: datos_ecf.fechaEmision || new Date().toISOString().split("T")[0],

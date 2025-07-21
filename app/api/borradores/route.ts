@@ -196,6 +196,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Preparar datos del borrador
     const borradorData = {
       empresa_id: empresaId,
+      usuario_id: user.id,
       nombre_borrador: nombre_borrador.trim(),
       descripcion: descripcion?.trim() || null,
       tipo_comprobante,
