@@ -95,7 +95,7 @@ export default function PerfilEmpresa() {
     try {
       setLoading(true)
 
-      const response = await fetch("/api/empresa")
+      const response = await fetch("/api/perfil-empresa")
       if (response.ok) {
         const result = await response.json()
         if (result.data) {
@@ -161,7 +161,7 @@ export default function PerfilEmpresa() {
     try {
       setSaving(true)
 
-      const response = await fetch("/api/empresa", {
+      const response = await fetch("/api/perfil-empresa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(empresa),
