@@ -104,8 +104,8 @@ export default function PersonalizacionFacturas() {
       const response = await fetch("/api/configuracion?tipo=personalizacion_facturas")
       const result = await response.json()
 
-      if (result.personalizacion_facturas) {
-        const config = result.personalizacion_facturas
+      if (result.data?.personalizacion_facturas) {
+        const config = result.data.personalizacion_facturas
         setFormData({
           mostrar_logo: config.mostrar_logo ?? true,
           color_primario: config.color_primario ?? "#3B82F6",
