@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
 import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
-import crypto from "crypto"
 
 export const dynamic = "force-dynamic"
 
@@ -42,29 +41,12 @@ export async function POST(
 
     const body = await request.json()
 
-    const { data: existing } = await supabase
-      .from("empresas")
-      .select("id")
-      .eq("user_id", user.id)
-      .single()
-
-    const upsertData: Record<string, any> = {
-      ...body,
-      user_id: user.id,
-      owner_id: user.id,
-      updated_at: new Date().toISOString(),
-    }
-
-    if (existing) {
-      upsertData.id = existing.id
-    } else {
-      upsertData.id = crypto.randomUUID()
-      upsertData.created_at = new Date().toISOString()
-    }
+    const { empresa: currentEmpresa } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const { data: empresa, error } = await supabase
       .from("empresas")
-      .upsert(upsertData, { onConflict: "user_id" })
+      .update({ ...body, updated_at: new Date().toISOString() })
+      .eq("id", currentEmpresa.id)
       .select()
       .single()
 
