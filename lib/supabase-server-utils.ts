@@ -67,7 +67,7 @@ export class SupabaseServerUtils {
       throw new Error("Empresa no encontrada")
     }
 
-    return { user, empresa: usuario.empresas }
+    return { user, empresa: usuario.empresas, empresaId: usuario.empresas.id }
   }
 
   // Verificar permisos de usuario
