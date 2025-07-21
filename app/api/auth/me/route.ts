@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       .select(
         `*, empresas ( id, rnc, razon_social, nombre_comercial, email, telefono, direccion, provincia, municipio, activa )`,
       )
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .maybeSingle()
 
     if (usuarioError) {

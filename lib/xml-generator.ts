@@ -18,8 +18,21 @@ export class XMLGenerator {
     const tipoECF = data.tipoECF
     const version = "1.0"
 
+    const schemaFiles: Record<string, string> = {
+      "31": "e-CF 31 v.1.0-cJRk5wr0IqRjmy0tNEHVP71RLFxdzN.xsd",
+      "32": "e-CF 32 v.1.0-WAX47ewTR6zuJj6WBdylI0aKKddoAH.xsd",
+      "33": "e-CF 33 v.1.0-Q8KGeII41Kcb09ZMznbPzkeS9wt3O3.xsd",
+      "41": "e-CF 41 v.1.0-ofkcl8zGUohzQwcoKIMBS071vHy5o8.xsd",
+      "43": "e-CF 43 v.1.0-ig2nfQQgOjoqIkZHfDnCrew9vO01vd.xsd",
+      "44": "e-CF 44 v.1.0-YCr9MdIzfGIIUnNl1RhOjPQJILPlhC.xsd",
+      "45": "e-CF 45 v.1.0-05f0Pdf5hgHSxLhUeiRyycytZn1B9c.xsd",
+      "46": "e-CF 46 v.1.0-3ybPWlMsNndSd5Wok6Zk5laH8qibt4.xsd",
+    }
+
+    const schemaFile = schemaFiles[tipoECF] || schemaFiles["31"]
+
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
-    xml += `<ECF xmlns="http://dgii.gov.do/ecf/schemas/e-CF" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://dgii.gov.do/ecf/schemas/e-CF e-CF_${tipoECF}_v${version}.xsd">\n`
+    xml += `<ECF xmlns="http://dgii.gov.do/ecf/schemas/e-CF" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://dgii.gov.do/ecf/schemas/e-CF ${schemaFile}">\n`
 
     // Encabezado
     xml += `  <Encabezado>\n`

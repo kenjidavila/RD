@@ -16,10 +16,16 @@ export async function GET() {
     }
 
     // Obtener estado de certificados digitales reales
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
     const { data: certificados, error: errorCertificados } = await supabase
       .from("certificados_digitales")
       .select("fecha_vencimiento, activo")
-      .eq("empresa_id", user.id)
+      .eq("empresa_id", usuario?.empresa_id)
 
     if (errorCertificados) {
       console.error("Error obteniendo certificados:", errorCertificados)

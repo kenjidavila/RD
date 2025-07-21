@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import InvoiceForm from "@/components/invoices/invoice-form"
 import { Loader2 } from "lucide-react"
+import { createClient } from "@/utils/supabase/client"
 
 export default function EmitirPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -11,9 +12,12 @@ export default function EmitirPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const checkAuth = () => {
-      const authToken = localStorage.getItem("auth_token")
-      if (!authToken) {
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) {
         router.push("/")
         return
       }

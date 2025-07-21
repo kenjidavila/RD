@@ -34,7 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     const { data: usuario, error: usuarioError } = await supabase
       .from("usuarios")
       .select("empresa_id")
-      .eq("id", user.id)
+      .eq("auth_user_id", user.id)
       .single()
 
     if (usuarioError || !usuario) {

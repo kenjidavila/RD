@@ -151,6 +151,7 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
   const [showBorradorDialog, setShowBorradorDialog] = useState(false)
 
   // Cargar datos de la empresa al inicializar
+
   useEffect(() => {
     loadEmpresaData()
   }, [])
@@ -158,49 +159,35 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
   const loadEmpresaData = async () => {
     try {
       setLoadingEmpresa(true)
-      const supabase = createClient()
 
-      // Obtener el usuario actual
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
+      const response = await fetch("/api/empresa")
 
-      if (userError || !user) {
-        console.error("Error getting user:", userError)
-        toast({
-          title: "Error de autenticación",
-          description: "No se pudo obtener la información del usuario",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Buscar empresa del usuario actual
-      const { data: empresa, error: empresaError } = await supabase
-        .from("empresas")
-        .select("*")
-        .eq("id", user.id)
-        .single()
-
-      if (empresaError) {
-        if (empresaError.code === "PGRST116") {
-          // No hay empresa configurada
+      if (!response.ok) {
+        if (response.status === 404) {
           toast({
             title: "Empresa no configurada",
-            description: "Por favor configure los datos de su empresa en Configuración &gt; Perfil de Empresa",
+            description: "Por favor configure los datos de su empresa en Configuración > Perfil de Empresa",
+            variant: "destructive",
+          })
+        } else if (response.status === 401) {
+          toast({
+            title: "Error de autenticación",
+            description: "Debe iniciar sesión para acceder a esta función",
             variant: "destructive",
           })
         } else {
-          console.error("Error loading empresa:", empresaError)
+          const errorData = await response.json()
           toast({
             title: "Error",
-            description: "Error al cargar los datos de la empresa",
+            description: errorData.error || "Error al cargar los datos de la empresa",
             variant: "destructive",
           })
         }
         return
       }
+
+      const result = await response.json()
+      const empresa = result.data
 
       if (empresa) {
         const empresaFormatted: EmpresaData = {
@@ -216,7 +203,6 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
 
         setEmpresaData(empresaFormatted)
 
-        // Actualizar formData con datos de la empresa
         setFormData((prev) => ({
           ...prev,
           rncEmisor: empresa.rnc,
@@ -240,7 +226,6 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
       setLoadingEmpresa(false)
     }
   }
-
   // Función para calcular totales
   const calculateTotals = (detalles: ECFDetalle[]) => {
     const totals = {

@@ -31,11 +31,19 @@ export class SupabaseServerUtils {
   static async getUserEmpresa(userId: string) {
     const supabase = await createClient()
 
-    const { data: usuario, error: userError } = await supabase
+    let { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("empresa_id, empresas(*)")
-      .eq("id", userId)
+      .eq("auth_user_id", userId)
       .single()
+
+    if (userError || !usuario) {
+      ;({ data: usuario, error: userError } = await supabase
+        .from("usuarios")
+        .select("empresa_id, empresas(*)")
+        .eq("id", userId)
+        .single())
+    }
 
     if (userError || !usuario) {
       throw new Error("Usuario no encontrado")
@@ -44,11 +52,57 @@ export class SupabaseServerUtils {
     return usuario.empresas
   }
 
+  // Obtener usuario autenticado y su empresa asociada
+  static async getSessionAndEmpresa() {
+    const supabase = await createClient()
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !user) {
+      throw new Error("Usuario no autenticado")
+    }
+
+    let { data: usuario, error: userError } = await supabase
+      .from("usuarios")
+      .select("empresa_id, empresas(*)")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (userError || !usuario) {
+      ;({ data: usuario, error: userError } = await supabase
+        .from("usuarios")
+        .select("empresa_id, empresas(*)")
+        .eq("id", user.id)
+        .single())
+    }
+
+    if (userError || !usuario || !usuario.empresas) {
+      throw new Error("Empresa no encontrada")
+    }
+
+    return { user, empresa: usuario.empresas }
+  }
+
   // Verificar permisos de usuario
   static async checkUserPermissions(userId: string, requiredRole?: string) {
     const supabase = await createClient()
 
-    const { data: usuario, error } = await supabase.from("usuarios").select("rol, activo").eq("id", userId).single()
+    let { data: usuario, error } = await supabase
+      .from("usuarios")
+      .select("rol, activo")
+      .eq("auth_user_id", userId)
+      .single()
+
+    if (error || !usuario) {
+      ;({ data: usuario, error } = await supabase
+        .from("usuarios")
+        .select("rol, activo")
+        .eq("id", userId)
+        .single())
+    }
 
     if (error || !usuario) {
       throw new Error("Usuario no encontrado")

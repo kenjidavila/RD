@@ -1,15 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { PDFStorageService } from "@/lib/pdf-storage-service"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
 
-    // Obtener userId del header o contexto de autenticación
-    const userId = request.headers.get("x-user-id")
-    if (!userId) {
-      return NextResponse.json({ error: "User authentication required" }, { status: 401 })
-    }
+    const { user } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const userId = user.id
 
     // Parsear filtros de query parameters
     const filters = {

@@ -1,15 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase"
+import { createServerClient } from "@/lib/supabase-server"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const xmlFile = formData.get("xml") as File
-    const emisorRNC = formData.get("emisorRNC") as string
 
-    if (!xmlFile || !emisorRNC) {
-      return NextResponse.json({ success: false, error: "XML file y RNC emisor son requeridos" }, { status: 400 })
+    if (!xmlFile) {
+      return NextResponse.json({ success: false, error: "XML file es requerido" }, { status: 400 })
     }
+
+    // Obtener usuario y empresa asociada
+    const { user, empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const supabase = await createServerClient()
+    const emisorRNC = empresa.rnc
 
     // Leer contenido del XML
     const xmlContent = await xmlFile.text()
@@ -28,7 +33,6 @@ export async function POST(request: NextRequest) {
     const trackId = `REC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
     // Guardar en base de datos
-    const supabase = createClient()
 
     const { error: insertError } = await supabase.from("comprobantes_recibidos").insert({
       track_id: trackId,
@@ -40,6 +44,8 @@ export async function POST(request: NextRequest) {
       xml_content: xmlContent,
       estado: "recibido",
       fecha_recepcion: new Date().toISOString(),
+      empresa_id: empresa.id,
+      usuario_id: user.id,
     })
 
     if (insertError) {
@@ -69,9 +75,15 @@ export async function GET(request: NextRequest) {
     const encf = searchParams.get("encf")
     const trackId = searchParams.get("trackId")
 
-    const supabase = createClient()
+    const { empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const supabase = await createServerClient()
+    const emisorRNC = empresa.rnc
 
-    let query = supabase.from("comprobantes_recibidos").select("*").order("fecha_recepcion", { ascending: false })
+    let query = supabase
+      .from("comprobantes_recibidos")
+      .select("*")
+      .order("fecha_recepcion", { ascending: false })
+      .eq("emisor_rnc", emisorRNC)
 
     if (encf) {
       query = query.eq("encf", encf)

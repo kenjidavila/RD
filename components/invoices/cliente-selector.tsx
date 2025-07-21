@@ -14,7 +14,6 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Search, Users, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@/utils/supabase/client"
 
 interface Cliente {
   id: string
@@ -66,61 +65,23 @@ export function ClienteSelector({ onClienteSelected }: ClienteSelectorProps) {
   const loadClientes = async () => {
     try {
       setLoading(true)
-      const supabase = createClient()
+      const response = await fetch("/api/clientes?estado=activo&limit=1000")
 
-      // Obtener el usuario actual
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
-
-      if (userError || !user) {
-        console.error("Error getting user:", userError)
-        return
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || "Error al cargar los clientes")
       }
 
-      // Obtener empresa del usuario
-      const { data: empresa, error: empresaError } = await supabase
-        .from("empresas")
-        .select("id")
-        .eq("id", user.id)
-        .single()
-
-      if (empresaError) {
-        console.error("Error getting empresa:", empresaError)
-        toast({
-          title: "Error",
-          description: "No se pudo obtener la información de la empresa",
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Cargar clientes de la empresa
-      const { data: clientesData, error: clientesError } = await supabase
-        .from("clientes")
-        .select("*")
-        .eq("empresa_id", empresa.id)
-        .eq("activo", true)
-        .order("nombre_razon_social")
-
-      if (clientesError) {
-        console.error("Error loading clientes:", clientesError)
-        toast({
-          title: "Error",
-          description: "Error al cargar los clientes",
-          variant: "destructive",
-        })
-        return
-      }
+      const result = await response.json()
+      const clientesData = result.data as Cliente[]
 
       setClientes(clientesData || [])
       setFilteredClientes(clientesData || [])
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading clientes:", error)
       toast({
         title: "Error",
-        description: "Error al cargar los clientes",
+        description: error.message || "Error al cargar los clientes",
         variant: "destructive",
       })
     } finally {
