@@ -1,9 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -13,10 +13,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const empresaId = usuario.empresa_id
+
     const { data: secuencias, error } = await supabase
       .from("configuracion_secuencias_ncf")
       .select("*")
-      .eq("empresa_id", user.id)
+      .eq("empresa_id", empresaId)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -33,7 +45,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const {
       data: { user },
@@ -42,6 +54,18 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
+
+    const { data: usuario, error: usuarioError } = await supabase
+      .from("usuarios")
+      .select("empresa_id")
+      .eq("auth_user_id", user.id)
+      .single()
+
+    if (usuarioError || !usuario) {
+      return NextResponse.json({ error: "Empresa no encontrada" }, { status: 404 })
+    }
+
+    const empresaId = usuario.empresa_id
 
     const body = await request.json()
     const { secuencias } = body
@@ -52,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // Validar y procesar cada secuencia
     const secuenciasParaGuardar = secuencias.map((sec) => ({
-      empresa_id: user.id,
+      empresa_id: empresaId,
       tipo_comprobante: sec.tipo_comprobante,
       secuencia_inicial: sec.secuencia_inicial,
       secuencia_final: sec.secuencia_final,
@@ -64,7 +88,7 @@ export async function POST(request: NextRequest) {
     }))
 
     // Eliminar secuencias existentes para esta empresa
-    await supabase.from("configuracion_secuencias_ncf").delete().eq("empresa_id", user.id)
+    await supabase.from("configuracion_secuencias_ncf").delete().eq("empresa_id", empresaId)
 
     // Insertar nuevas secuencias
     const { error: insertError } = await supabase.from("configuracion_secuencias_ncf").insert(secuenciasParaGuardar)
