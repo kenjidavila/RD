@@ -41,14 +41,33 @@ export async function POST(
 
     const body = await request.json()
 
-    const { empresa: currentEmpresa } = await SupabaseServerUtils.getSessionAndEmpresa()
+    let currentEmpresa
+    try {
+      ;({ empresa: currentEmpresa } = await SupabaseServerUtils.getSessionAndEmpresa())
+    } catch (err: any) {
+      if (err.message === "Empresa no encontrada") {
+        currentEmpresa = null
+      } else {
+        throw err
+      }
+    }
 
-    const { data: empresa, error } = await supabase
-      .from("empresas")
-      .update({ ...body, updated_at: new Date().toISOString() })
-      .eq("id", currentEmpresa.id)
-      .select()
-      .single()
+    let empresa
+    let error
+    if (currentEmpresa) {
+      ;({ data: empresa, error } = await supabase
+        .from("empresas")
+        .update({ ...body, updated_at: new Date().toISOString() })
+        .eq("id", currentEmpresa.id)
+        .select()
+        .single())
+    } else {
+      ;({ data: empresa, error } = await supabase
+        .from("empresas")
+        .insert({ ...body, owner_id: user.id })
+        .select()
+        .single())
+    }
 
     if (error) throw error
 
