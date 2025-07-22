@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
 import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 
 interface ApiResponse {
@@ -12,8 +11,7 @@ interface ApiResponse {
 
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
-    const supabase = await createClient()
-    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const { supabase, empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get("tipo")
@@ -62,8 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
-    const supabase = await createClient()
-    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const { supabase, empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const body = await request.json()
     const { tipo, configuracion } = body
@@ -124,8 +121,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
 export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
-    const supabase = await createClient()
-    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
+    const { supabase, empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get("tipo")
