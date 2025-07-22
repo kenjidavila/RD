@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -61,6 +62,7 @@ export default function PersonalizacionFacturas() {
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   const [formData, setFormData] = useState<PersonalizacionConfig>({
     mostrar_logo: true,
@@ -102,6 +104,12 @@ export default function PersonalizacionFacturas() {
   const fetchConfiguracion = async () => {
     try {
       const response = await fetch("/api/configuracion?tipo=personalizacion_facturas")
+
+      if (response.status === 401 || response.status === 404) {
+        router.push("/perfil-empresa")
+        return
+      }
+
       const result = await response.json()
 
       if (result.data?.personalizacion_facturas) {
@@ -173,6 +181,10 @@ export default function PersonalizacionFacturas() {
           configuracion: formData,
         }),
       })
+      if (response.status === 401 || response.status === 404) {
+        router.push("/perfil-empresa")
+        return
+      }
 
       const result = await response.json()
 

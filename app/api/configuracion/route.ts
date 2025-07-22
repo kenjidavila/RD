@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
 
 interface ApiResponse {
   success: boolean
@@ -12,43 +13,7 @@ interface ApiResponse {
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
     const supabase = await createClient()
-
-    // Verificar autenticación
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No autorizado",
-          errors: ["Usuario no autenticado"],
-        },
-        { status: 401 },
-      )
-    }
-
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("auth_user_id", user.id)
-      .single()
-
-    if (usuarioError || !usuario) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Empresa no encontrada",
-          errors: ["No se encontró la empresa asociada al usuario"],
-        },
-        { status: 404 },
-      )
-    }
-
-    const empresaId = usuario.empresa_id
+    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get("tipo")
@@ -98,43 +63,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
     const supabase = await createClient()
-
-    // Verificar autenticación
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No autorizado",
-          errors: ["Usuario no autenticado"],
-        },
-        { status: 401 },
-      )
-    }
-
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("auth_user_id", user.id)
-      .single()
-
-    if (usuarioError || !usuario) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Empresa no encontrada",
-          errors: ["No se encontró la empresa asociada al usuario"],
-        },
-        { status: 404 },
-      )
-    }
-
-    const empresaId = usuario.empresa_id
+    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const body = await request.json()
     const { tipo, configuracion } = body
@@ -152,12 +81,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     const { data, error } = await supabase
       .from("configuraciones")
-      .upsert({
-        empresa_id: empresaId,
-        tipo,
-        configuracion,
-        updated_at: new Date().toISOString(),
-      })
+      .upsert(
+        {
+          empresa_id: empresaId,
+          tipo,
+          configuracion,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "empresa_id,tipo" },
+      )
       .select()
       .single()
 
@@ -193,23 +125,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
     const supabase = await createClient()
-
-    // Verificar autenticación
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "No autorizado",
-          errors: ["Usuario no autenticado"],
-        },
-        { status: 401 },
-      )
-    }
+    const { empresaId } = await SupabaseServerUtils.getSessionAndEmpresa()
 
     const { searchParams } = new URL(request.url)
     const tipo = searchParams.get("tipo")
@@ -225,25 +141,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
       )
     }
 
-    // Obtener empresa del usuario
-    const { data: usuario, error: usuarioError } = await supabase
-      .from("usuarios")
-      .select("empresa_id")
-      .eq("auth_user_id", user.id)
-      .single()
-
-    if (usuarioError || !usuario) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Empresa no encontrada",
-          errors: ["No se encontró la empresa asociada al usuario"],
-        },
-        { status: 404 },
-      )
-    }
-
-    const empresaId = usuario.empresa_id
 
     const { error } = await supabase
       .from("configuraciones")

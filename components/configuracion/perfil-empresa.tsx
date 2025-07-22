@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,12 +86,11 @@ export default function PerfilEmpresa() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
-  const [ownerId, setOwnerId] = useState<string | null>(null)
+  const router = useRouter()
 
 
   useEffect(() => {
     cargarDatosEmpresa()
-    obtenerOwnerId()
   }, [])
 
   const cargarDatosEmpresa = async () => {
@@ -104,11 +104,7 @@ export default function PerfilEmpresa() {
           setEmpresa(result.data)
         }
       } else if (response.status === 401) {
-        toast({
-          title: "Error",
-          description: "Debe iniciar sesión para acceder a esta función",
-          variant: "destructive",
-        })
+        router.push("/login")
         return
       } else if (response.status !== 404) {
         const errorData = await response.json()
@@ -126,17 +122,6 @@ export default function PerfilEmpresa() {
     }
   }
 
-  const obtenerOwnerId = async () => {
-    try {
-      const res = await fetch("/api/auth/me")
-      if (res.ok) {
-        const data = await res.json()
-        setOwnerId(data.user.id)
-      }
-    } catch (err) {
-      console.error("Error obteniendo owner_id:", err)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -178,8 +163,13 @@ export default function PerfilEmpresa() {
       const response = await fetch("/api/perfil-empresa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...empresa, owner_id: ownerId }),
+        body: JSON.stringify(empresa),
       })
+
+      if (response.status === 401) {
+        router.push("/login")
+        return
+      }
 
       if (!response.ok) {
         const errorData = await response.json()
