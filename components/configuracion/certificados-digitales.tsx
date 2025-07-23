@@ -26,7 +26,7 @@ export default function CertificadosDigitales() {
   const { reportError, reportSuccess } = useConfiguracionTabs()
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -147,13 +147,13 @@ export default function CertificadosDigitales() {
   }
 
   const subirCertificado = async () => {
-    if (uploading) return
+    if (saving) return
     if (!validateFields()) return
     const file = selectedFile!
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf("."))
 
     try {
-      setUploading(true)
+      setSaving(true)
       setError(null)
       if ([".pfx", ".p12"].includes(fileExtension)) {
         if (!password) {
@@ -164,12 +164,29 @@ export default function CertificadosDigitales() {
           })
           return
         }
+
+        let parsed
         try {
-          await DigitalSignatureService.parsePfx(await file.arrayBuffer(), password)
+          parsed = DigitalSignatureService.parsePfx(
+            await file.arrayBuffer(),
+            password,
+          )
         } catch (err) {
+          setError("No se pudo leer el archivo PFX. Verifique la contraseña")
           toast({
-            title: "Contraseña inválida",
-            description: "La contraseña no coincide con el certificado",
+            title: "Certificado inválido",
+            description:
+              "El archivo PFX no pudo cargarse o la contraseña es incorrecta",
+            variant: "destructive",
+          })
+          return
+        }
+
+        if (!parsed?.certificate || !parsed?.privateKey) {
+          setError("El certificado PFX es inválido")
+          toast({
+            title: "Certificado inválido",
+            description: "El archivo PFX no contiene un certificado válido",
             variant: "destructive",
           })
           return
@@ -263,7 +280,7 @@ export default function CertificadosDigitales() {
       toast({ title: "Error", description: "Error al subir certificado digital", variant: "destructive" })
       reportError("certificados")
     } finally {
-      setUploading(false)
+      setSaving(false)
     }
   }
 
@@ -397,7 +414,7 @@ export default function CertificadosDigitales() {
               type="file"
               accept=".p12,.pfx,.pem,.crt,.cer,.key,.txt"
               onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-              disabled={uploading}
+              disabled={saving}
               className="flex-1"
             />
             {selectedFile && [".pfx", ".p12"].includes(selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf("."))) && (
@@ -409,9 +426,9 @@ export default function CertificadosDigitales() {
                 className="flex-1"
               />
             )}
-            <Button onClick={subirCertificado} disabled={uploading || !selectedFile}>
+            <Button onClick={subirCertificado} disabled={saving || !selectedFile || (selectedFile && [".pfx", ".p12"].includes(selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf("."))) && !password)}>
               <Upload className="h-4 w-4 mr-2" />
-              {uploading ? "Subiendo..." : "Subir"}
+              {saving ? "Subiendo..." : "Subir"}
             </Button>
           </div>
           <p className="text-sm text-gray-500">Formatos soportados: .p12, .pfx, .pem, .crt (máximo 5MB)</p>
