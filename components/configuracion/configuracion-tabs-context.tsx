@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 export type ConfigTabKey =
   | "perfil"
@@ -11,10 +11,18 @@ export type ConfigTabKey =
   | "personalizacion"
   | "resumen"
 
+interface TabStatus {
+  state: "idle" | "pending" | "success" | "error"
+  message?: string
+}
+
 interface TabsContextType {
   reportError: (tab: ConfigTabKey, message?: string) => void
   reportSuccess: (tab: ConfigTabKey, message?: string) => void
+  setPending: (tab: ConfigTabKey, message?: string) => void
+  goToTab?: (tab: ConfigTabKey) => void
   resetStatus: () => void
+  statuses: Record<ConfigTabKey, TabStatus>
   errors: Record<ConfigTabKey, boolean>
   successes: Record<ConfigTabKey, boolean>
 }
@@ -35,22 +43,35 @@ export function ConfiguracionTabsProvider({
   children,
   reportError,
   reportSuccess,
+  goToTab,
 }: {
   children: React.ReactNode
   reportError: (tab: ConfigTabKey) => void
   reportSuccess: (tab: ConfigTabKey) => void
+  goToTab?: (tab: ConfigTabKey) => void
 }) {
-  const [errors, setErrors] = useState<Record<ConfigTabKey, boolean>>({} as Record<ConfigTabKey, boolean>)
-  const [successes, setSuccesses] = useState<Record<ConfigTabKey, boolean>>({} as Record<ConfigTabKey, boolean>)
+  const [statuses, setStatuses] = useState<Record<ConfigTabKey, TabStatus>>({} as Record<ConfigTabKey, TabStatus>)
+  const errors = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(statuses).map(([k, v]) => [k, v.state === "error"]),
+      ) as Record<ConfigTabKey, boolean>,
+    [statuses],
+  )
+  const successes = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(statuses).map(([k, v]) => [k, v.state === "success"]),
+      ) as Record<ConfigTabKey, boolean>,
+    [statuses],
+  )
 
   useEffect(() => {
     if (typeof window === "undefined") return
     const stored = localStorage.getItem("config_tabs_status")
     if (stored) {
       try {
-        const parsed = JSON.parse(stored)
-        setErrors(parsed.errors || {})
-        setSuccesses(parsed.successes || {})
+        setStatuses(JSON.parse(stored))
       } catch {
         /* ignore */
       }
@@ -59,33 +80,40 @@ export function ConfiguracionTabsProvider({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(
-        "config_tabs_status",
-        JSON.stringify({ errors, successes }),
-      )
+      localStorage.setItem("config_tabs_status", JSON.stringify(statuses))
     }
-  }, [errors, successes])
+  }, [statuses])
 
-  const handleError = (tab: ConfigTabKey) => {
-    setErrors((prev) => ({ ...prev, [tab]: true }))
-    setSuccesses((prev) => ({ ...prev, [tab]: false }))
+  const setPending = (tab: ConfigTabKey, message?: string) => {
+    setStatuses((prev) => ({ ...prev, [tab]: { state: "pending", message } }))
+  }
+
+  const handleError = (tab: ConfigTabKey, message?: string) => {
+    setStatuses((prev) => ({ ...prev, [tab]: { state: "error", message } }))
     reportError(tab)
   }
 
-  const handleSuccess = (tab: ConfigTabKey) => {
-    setErrors((prev) => ({ ...prev, [tab]: false }))
-    setSuccesses((prev) => ({ ...prev, [tab]: true }))
+  const handleSuccess = (tab: ConfigTabKey, message?: string) => {
+    setStatuses((prev) => ({ ...prev, [tab]: { state: "success", message } }))
     reportSuccess(tab)
   }
 
   const resetStatus = () => {
-    setErrors({} as Record<ConfigTabKey, boolean>)
-    setSuccesses({} as Record<ConfigTabKey, boolean>)
+    setStatuses({} as Record<ConfigTabKey, TabStatus>)
   }
 
   return (
     <TabsContext.Provider
-      value={{ reportError: handleError, reportSuccess: handleSuccess, resetStatus, errors, successes }}
+      value={{
+        reportError: handleError,
+        reportSuccess: handleSuccess,
+        setPending,
+        goToTab,
+        resetStatus,
+        statuses,
+        errors,
+        successes,
+      }}
     >
       {children}
     </TabsContext.Provider>

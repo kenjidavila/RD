@@ -221,8 +221,14 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
 
   const validateFormData = (): string | null => {
     const hexColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+    if (!formData.color_primario || !formData.color_secundario) {
+      return "Debe definir los colores primario y secundario"
+    }
     if (!hexColor.test(formData.color_primario) || !hexColor.test(formData.color_secundario)) {
       return "Los colores primario y secundario deben ser códigos hexadecimales válidos"
+    }
+    if (!formData.fuentes_encabezado || !formData.fuentes_cuerpo || !formData.fuentes_numeros) {
+      return "Debe seleccionar las fuentes a utilizar"
     }
     if (formData.marca_agua_habilitada && !formData.marca_agua_texto.trim()) {
       return "El texto de la marca de agua es obligatorio"

@@ -140,6 +140,28 @@ export default function GestionUsuarios() {
       return
     }
 
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
+      toast({
+        title: "Correo inválido",
+        description: "Ingrese un correo electrónico válido",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      setProcessing(false)
+      return
+    }
+
+    if (!editingUser && newUser.password.trim().length < 8) {
+      toast({
+        title: "Contraseña débil",
+        description: "La contraseña debe tener al menos 8 caracteres",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      setProcessing(false)
+      return
+    }
+
     // Validar duplicidad de email en backend
     try {
       const client = createClient()
@@ -202,6 +224,13 @@ export default function GestionUsuarios() {
           reportError("usuarios")
           setProcessing(false)
           return
+        }
+        if (newUser.rol !== editingUser.rol) {
+          const confirmed = confirm("¿Confirma el cambio de rol del usuario?")
+          if (!confirmed) {
+            setProcessing(false)
+            return
+          }
         }
         // Actualizar usuario existente
         const result = await authService.updateUser(editingUser.id, {
