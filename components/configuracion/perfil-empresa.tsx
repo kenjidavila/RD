@@ -47,7 +47,7 @@ interface EmpresaData {
 }
 export default function PerfilEmpresa() {
   const router = useRouter()
-  const { setEmpresaId } = useEmpresa()
+  const { empresaId, setEmpresaId } = useEmpresa()
   const { reportError, reportSuccess } = useConfiguracionTabs()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
@@ -153,19 +153,27 @@ export default function PerfilEmpresa() {
   }
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const validateFields = () => {
+    const { razon_social, rnc, telefono, email, municipio, direccion } = empresa
 
-    const { razon_social, rnc, telefono, email, provincia, municipio, direccion } = empresa
+    if (!empresaId) {
+      toast({
+        title: "Empresa no identificada",
+        description: "No se encontró la empresa para actualizar",
+        variant: "destructive",
+      })
+      reportError("perfil")
+      return false
+    }
 
     if (
-      !razon_social ||
-      !rnc ||
-      !telefono ||
-      !email ||
-      !provincia ||
-      !municipio ||
-      !direccion
+      !razon_social.trim() ||
+      !rnc.trim() ||
+      !telefono.trim() ||
+      !email.trim() ||
+      !provinciaCodigo ||
+      !municipio.trim() ||
+      !direccion.trim()
     ) {
       toast({
         title: "Error",
@@ -173,7 +181,7 @@ export default function PerfilEmpresa() {
         variant: "destructive",
       })
       reportError("perfil")
-      return
+      return false
     }
 
     if (!/^\d{9,11}$/.test(rnc)) {
@@ -183,7 +191,7 @@ export default function PerfilEmpresa() {
         variant: "destructive",
       })
       reportError("perfil")
-      return
+      return false
     }
 
     if (!/^\+?[0-9\-()\s]{7,20}$/.test(telefono)) {
@@ -193,17 +201,17 @@ export default function PerfilEmpresa() {
         variant: "destructive",
       })
       reportError("perfil")
-      return
+      return false
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
       toast({
         title: "Email inválido",
         description: "Ingrese un correo electrónico válido",
         variant: "destructive",
       })
       reportError("perfil")
-      return
+      return false
     }
 
     const provinciaValida = provincias.find((p) => p.codigo === provinciaCodigo)
@@ -216,7 +224,7 @@ export default function PerfilEmpresa() {
         variant: "destructive",
       })
       reportError("perfil")
-      return
+      return false
     }
 
     if (!municipioValido) {
@@ -226,11 +234,24 @@ export default function PerfilEmpresa() {
         variant: "destructive",
       })
       reportError("perfil")
+      return false
+    }
+
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (saving) return
+    setSaving(true)
+
+    if (!validateFields()) {
+      setSaving(false)
       return
     }
 
     try {
-      setSaving(true)
 
       const response = await fetch("/api/perfil-empresa", {
         method: "POST",
