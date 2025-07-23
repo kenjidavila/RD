@@ -27,6 +27,7 @@ import { Building2, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Provincia, Municipio } from "@/lib/dgii-catalogs"
 import { DGIICatalogsService } from "@/lib/dgii-catalogs"
+import { useEmpresa } from "@/components/empresa-context"
 
 
 interface EmpresaData {
@@ -45,6 +46,7 @@ interface EmpresaData {
 }
 export default function PerfilEmpresa() {
   const router = useRouter()
+  const { setEmpresaId } = useEmpresa()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [provinciaCodigo, setProvinciaCodigo] = useState("")
@@ -102,6 +104,7 @@ export default function PerfilEmpresa() {
         const result = await response.json()
         if (result.data) {
           setEmpresa(result.data)
+          setEmpresaId(result.data.id)
         }
       } else if (response.status === 401) {
         toast({
@@ -187,6 +190,7 @@ export default function PerfilEmpresa() {
       const result = await response.json()
       if (result.data) {
         setEmpresa(result.data)
+        setEmpresaId(result.data.id)
         // reload data from backend to ensure state matches stored values
         await cargarDatosEmpresa()
         router.refresh()

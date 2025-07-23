@@ -359,7 +359,13 @@ export default function SecuenciasNCF() {
                   onValueChange={(value) => actualizarSecuencia(index, "tipo_comprobante", value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar tipo" />
+                    <SelectValue placeholder="Seleccionar tipo">
+                      {
+                        TIPOS_COMPROBANTE.find(
+                          (t) => t.value === secuencia.tipo_comprobante,
+                        )?.label
+                      }
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {TIPOS_COMPROBANTE.map((tipo) => (

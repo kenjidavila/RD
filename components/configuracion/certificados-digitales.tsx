@@ -14,9 +14,10 @@ import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-rea
 import { createClient } from "@/lib/supabase"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
+import { useEmpresa } from "@/components/empresa-context"
 
 export default function CertificadosDigitales() {
-  const [empresaId, setEmpresaId] = useState<string | null>(null)
+  const { empresaId } = useEmpresa()
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -26,20 +27,7 @@ export default function CertificadosDigitales() {
   const supabase = createClient()
   const { toast } = useToast()
 
-  useEffect(() => {
-    const loadEmpresa = async () => {
-      try {
-        const res = await fetch("/api/empresa")
-        if (res.ok) {
-          const result = await res.json()
-          setEmpresaId(result.data?.id || null)
-        }
-      } catch (error) {
-        logger.error("Error obteniendo empresa", { error })
-      }
-    }
-    loadEmpresa()
-  }, [])
+
 
   useEffect(() => {
     if (empresaId) {
@@ -111,6 +99,19 @@ export default function CertificadosDigitales() {
       setError(null)
 
       if (certificados.some((c) => c.nombre === file.name)) {
+        const msg = "Ya existe un certificado con el mismo nombre"
+        setError(msg)
+        toast({ title: "Error", description: msg, variant: "destructive" })
+        return
+      }
+
+      const { data: existing } = await supabase
+        .from("certificados_digitales")
+        .select("id")
+        .eq("empresa_id", empresaId)
+        .eq("nombre", file.name)
+        .maybeSingle()
+      if (existing) {
         const msg = "Ya existe un certificado con el mismo nombre"
         setError(msg)
         toast({ title: "Error", description: msg, variant: "destructive" })

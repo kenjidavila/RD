@@ -183,6 +183,9 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     if (!hexColor.test(formData.color_primario) || !hexColor.test(formData.color_secundario)) {
       return "Los colores primario y secundario deben ser códigos hexadecimales válidos"
     }
+    if (formData.marca_agua_habilitada && !formData.marca_agua_texto.trim()) {
+      return "El texto de la marca de agua es obligatorio"
+    }
     const numericFields = [
       formData.papel_margenes_superior,
       formData.papel_margenes_inferior,
