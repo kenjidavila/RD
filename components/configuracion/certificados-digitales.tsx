@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/hooks/use-toast"
 import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react"
 import { createClient } from "@/lib/supabase"
 import { logger } from "@/lib/logger"
@@ -23,6 +24,7 @@ export default function CertificadosDigitales() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const supabase = createClient()
+  const { toast } = useToast()
 
   useEffect(() => {
     const loadEmpresa = async () => {
@@ -61,7 +63,9 @@ export default function CertificadosDigitales() {
       logger.info("Certificados cargados", { empresaId, count: data?.length })
     } catch (error) {
       logger.error("Error cargando certificados", { error, empresaId })
-      setError("Error al cargar certificados digitales")
+      const msg = "Error al cargar certificados digitales"
+      setError(msg)
+      toast({ title: "Error", description: msg, variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -73,6 +77,7 @@ export default function CertificadosDigitales() {
 
     if (!empresaId) {
       setError("Empresa no identificada")
+      toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
       return
     }
 
@@ -82,12 +87,22 @@ export default function CertificadosDigitales() {
 
     if (!allowedTypes.includes(fileExtension)) {
       setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt")
+      toast({
+        title: "Error",
+        description: "Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt",
+        variant: "destructive",
+      })
       return
     }
 
     // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError("El archivo es demasiado grande. Máximo 5MB permitido")
+      toast({
+        title: "Error",
+        description: "El archivo es demasiado grande. Máximo 5MB permitido",
+        variant: "destructive",
+      })
       return
     }
 
@@ -120,6 +135,7 @@ export default function CertificadosDigitales() {
       if (dbError) throw dbError
 
       setSuccess("Certificado digital subido exitosamente")
+      toast({ title: "Éxito", description: "Certificado digital subido exitosamente" })
       await cargarCertificados()
 
       // Limpiar input
@@ -129,6 +145,7 @@ export default function CertificadosDigitales() {
     } catch (error) {
       logger.error("Error subiendo certificado", { error, empresaId })
       setError("Error al subir certificado digital")
+      toast({ title: "Error", description: "Error al subir certificado digital", variant: "destructive" })
     } finally {
       setUploading(false)
     }
@@ -139,6 +156,7 @@ export default function CertificadosDigitales() {
 
     if (!empresaId) {
       setError("Empresa no identificada")
+      toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
       return
     }
 
@@ -155,18 +173,21 @@ export default function CertificadosDigitales() {
       if (error) throw error
 
       setSuccess("Certificado eliminado exitosamente")
+      toast({ title: "Éxito", description: "Certificado eliminado exitosamente" })
       await cargarCertificados()
 
       logger.info("Certificado eliminado", { empresaId, certificadoId: certificado.id })
     } catch (error) {
       logger.error("Error eliminando certificado", { error, empresaId })
       setError("Error al eliminar certificado")
+      toast({ title: "Error", description: "Error al eliminar certificado", variant: "destructive" })
     }
   }
 
   const descargarCertificado = async (certificado: CertificadoDigital) => {
     if (!empresaId) {
       setError("Empresa no identificada")
+      toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
       return
     }
     try {
@@ -186,6 +207,7 @@ export default function CertificadosDigitales() {
     } catch (error) {
       logger.error("Error descargando certificado", { error, empresaId })
       setError("Error al descargar certificado")
+      toast({ title: "Error", description: "Error al descargar certificado", variant: "destructive" })
     }
   }
 
