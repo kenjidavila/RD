@@ -31,17 +31,29 @@ export class SupabaseServerUtils {
   static async getUserEmpresa(userId: string) {
     const supabase = await createClient()
 
+    // Intentar obtener la empresa a través de la tabla de usuarios
     const { data: usuario, error: userError } = await supabase
       .from("usuarios")
       .select("empresa_id, empresas(*)")
       .eq("auth_user_id", userId)
-      .single()
+      .maybeSingle()
 
-    if (userError || !usuario) {
-      throw new Error("Usuario no encontrado")
+    if (usuario?.empresas) {
+      return usuario.empresas
     }
 
-    return usuario.empresas
+    // Si no existe registro en usuarios, buscar empresa por owner_id
+    const { data: empresa, error: empresaError } = await supabase
+      .from("empresas")
+      .select("*")
+      .eq("owner_id", userId)
+      .maybeSingle()
+
+    if (empresaError || !empresa) {
+      throw new Error("Empresa no encontrada")
+    }
+
+    return empresa
   }
 
   // Obtener usuario autenticado y su empresa asociada
@@ -61,13 +73,28 @@ export class SupabaseServerUtils {
       .from("usuarios")
       .select("empresa_id, empresas(*)")
       .eq("auth_user_id", user.id)
-      .single()
+      .maybeSingle()
 
-    if (userError || !usuario || !usuario.empresas) {
+    if (usuario?.empresas) {
+      return {
+        user,
+        empresa: usuario.empresas,
+        empresaId: usuario.empresas.id,
+      }
+    }
+
+    // Fallback: buscar empresa directamente por owner_id
+    const { data: empresa, error: empresaError } = await supabase
+      .from("empresas")
+      .select("*")
+      .eq("owner_id", user.id)
+      .maybeSingle()
+
+    if (empresaError || !empresa) {
       throw new Error("Empresa no encontrada")
     }
 
-    return { user, empresa: usuario.empresas, empresaId: usuario.empresas.id }
+    return { user, empresa, empresaId: empresa.id }
   }
 
   // Verificar permisos de usuario
