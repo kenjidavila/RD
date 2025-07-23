@@ -1,12 +1,22 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
+
+export type ConfigTabKey =
+  | "perfil"
+  | "certificados"
+  | "usuarios"
+  | "secuencias"
+  | "contingencia"
+  | "personalizacion"
+  | "resumen"
 
 interface TabsContextType {
-  reportError: (tab: string) => void
-  reportSuccess: (tab: string) => void
-  resetErrors: () => void
-  errors: Record<string, boolean>
+  reportError: (tab: ConfigTabKey, message?: string) => void
+  reportSuccess: (tab: ConfigTabKey, message?: string) => void
+  resetStatus: () => void
+  errors: Record<ConfigTabKey, boolean>
+  successes: Record<ConfigTabKey, boolean>
 }
 
 const TabsContext = createContext<TabsContextType | undefined>(undefined)
@@ -27,26 +37,55 @@ export function ConfiguracionTabsProvider({
   reportSuccess,
 }: {
   children: React.ReactNode
-  reportError: (tab: string) => void
-  reportSuccess: (tab: string) => void
+  reportError: (tab: ConfigTabKey) => void
+  reportSuccess: (tab: ConfigTabKey) => void
 }) {
-  const [errors, setErrors] = useState<Record<string, boolean>>({})
+  const [errors, setErrors] = useState<Record<ConfigTabKey, boolean>>({} as Record<ConfigTabKey, boolean>)
+  const [successes, setSuccesses] = useState<Record<ConfigTabKey, boolean>>({} as Record<ConfigTabKey, boolean>)
 
-  const handleError = (tab: string) => {
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const stored = localStorage.getItem("config_tabs_status")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setErrors(parsed.errors || {})
+        setSuccesses(parsed.successes || {})
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "config_tabs_status",
+        JSON.stringify({ errors, successes }),
+      )
+    }
+  }, [errors, successes])
+
+  const handleError = (tab: ConfigTabKey) => {
     setErrors((prev) => ({ ...prev, [tab]: true }))
+    setSuccesses((prev) => ({ ...prev, [tab]: false }))
     reportError(tab)
   }
 
-  const handleSuccess = (tab: string) => {
+  const handleSuccess = (tab: ConfigTabKey) => {
     setErrors((prev) => ({ ...prev, [tab]: false }))
+    setSuccesses((prev) => ({ ...prev, [tab]: true }))
     reportSuccess(tab)
   }
 
-  const resetErrors = () => setErrors({})
+  const resetStatus = () => {
+    setErrors({} as Record<ConfigTabKey, boolean>)
+    setSuccesses({} as Record<ConfigTabKey, boolean>)
+  }
 
   return (
     <TabsContext.Provider
-      value={{ reportError: handleError, reportSuccess: handleSuccess, resetErrors, errors }}
+      value={{ reportError: handleError, reportSuccess: handleSuccess, resetStatus, errors, successes }}
     >
       {children}
     </TabsContext.Provider>

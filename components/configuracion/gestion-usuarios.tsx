@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { createClient } from "@/utils/supabase/client"
 import {
   Dialog,
   DialogContent,
@@ -137,6 +138,28 @@ export default function GestionUsuarios() {
       reportError("usuarios")
       setProcessing(false)
       return
+    }
+
+    // Validar duplicidad de email en backend
+    try {
+      const client = createClient()
+      const { data: existing } = await client
+        .from("usuarios")
+        .select("id")
+        .eq("email", newUser.email)
+        .maybeSingle()
+      if (existing && (!editingUser || editingUser.id !== existing.id)) {
+        toast({
+          title: "Correo duplicado",
+          description: "Ya existe un usuario con ese correo electrónico",
+          variant: "destructive",
+        })
+        reportError("usuarios")
+        setProcessing(false)
+        return
+      }
+    } catch (err) {
+      // ignore error and let backend handle
     }
 
     if (
