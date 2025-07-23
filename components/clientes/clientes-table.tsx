@@ -72,7 +72,7 @@ export default function ClientesTable({ onEditCliente }: ClientesTableProps) {
       console.error("Error cargando clientes:", error)
       toast({
         title: "Error",
-        description: "Error al cargar los clientes",
+        description: error instanceof Error ? error.message : "Error al cargar los clientes",
         variant: "destructive",
       })
     } finally {
@@ -129,7 +129,7 @@ export default function ClientesTable({ onEditCliente }: ClientesTableProps) {
       console.error("Error eliminando cliente:", error)
       toast({
         title: "Error",
-        description: "Error al eliminar el cliente",
+        description: error instanceof Error ? error.message : "Error al eliminar el cliente",
         variant: "destructive",
       })
     }

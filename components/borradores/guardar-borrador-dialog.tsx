@@ -110,7 +110,7 @@ export function GuardarBorradorDialog({
       console.error("Error guardando borrador:", error)
       toast({
         title: "Error",
-        description: "Error al guardar el borrador",
+        description: error instanceof Error ? error.message : "Error al guardar el borrador",
         variant: "destructive",
       })
     } finally {

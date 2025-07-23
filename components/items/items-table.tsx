@@ -80,7 +80,7 @@ export default function ItemsTable({ onEditItem }: ItemsTableProps) {
       console.error("Error cargando items:", error)
       toast({
         title: "Error",
-        description: "Error al cargar los items",
+        description: error instanceof Error ? error.message : "Error al cargar los items",
         variant: "destructive",
       })
     } finally {
@@ -140,7 +140,7 @@ export default function ItemsTable({ onEditItem }: ItemsTableProps) {
       console.error("Error eliminando item:", error)
       toast({
         title: "Error",
-        description: "Error al eliminar el item",
+        description: error instanceof Error ? error.message : "Error al eliminar el item",
         variant: "destructive",
       })
     }
@@ -177,7 +177,7 @@ export default function ItemsTable({ onEditItem }: ItemsTableProps) {
       console.error("Error actualizando favorito:", error)
       toast({
         title: "Error",
-        description: "Error al actualizar favorito",
+        description: error instanceof Error ? error.message : "Error al actualizar favorito",
         variant: "destructive",
       })
     }

@@ -151,7 +151,7 @@ export default function PersonalizacionFacturas() {
       console.error("Error fetching configuracion:", error)
       toast({
         title: "Error",
-        description: "No se pudo cargar la configuración de facturas",
+        description: error instanceof Error ? error.message : "No se pudo cargar la configuración de facturas",
         variant: "destructive",
       })
     } finally {

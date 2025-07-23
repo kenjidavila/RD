@@ -73,7 +73,7 @@ export default function BorradoresTable() {
       console.error("Error cargando borradores:", error)
       toast({
         title: "Error",
-        description: "Error al cargar los borradores",
+        description: error instanceof Error ? error.message : "Error al cargar los borradores",
         variant: "destructive",
       })
     } finally {
@@ -120,7 +120,7 @@ export default function BorradoresTable() {
       console.error("Error eliminando borrador:", error)
       toast({
         title: "Error",
-        description: "Error al eliminar el borrador",
+        description: error instanceof Error ? error.message : "Error al eliminar el borrador",
         variant: "destructive",
       })
     }

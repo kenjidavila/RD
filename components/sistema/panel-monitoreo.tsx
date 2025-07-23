@@ -84,7 +84,7 @@ export default function PanelMonitoreo() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo crear el backup",
+        description: error instanceof Error ? error.message : "No se pudo crear el backup",
         variant: "destructive",
       })
     } finally {

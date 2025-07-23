@@ -100,7 +100,7 @@ export default function ConsultasForm() {
       console.error("Error en consulta:", error)
       toast({
         title: "Error",
-        description: "Error al realizar la consulta",
+        description: error instanceof Error ? error.message : "Error al realizar la consulta",
         variant: "destructive",
       })
       setResultados([])

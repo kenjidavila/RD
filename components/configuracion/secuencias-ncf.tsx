@@ -78,7 +78,7 @@ export default function SecuenciasNCF() {
       console.error("Error cargando secuencias:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar las secuencias NCF",
+        description: error instanceof Error ? error.message : "No se pudieron cargar las secuencias NCF",
         variant: "destructive",
       })
     } finally {
@@ -234,7 +234,7 @@ export default function SecuenciasNCF() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudieron guardar las secuencias NCF",
+        description: error instanceof Error ? error.message : "No se pudieron guardar las secuencias NCF",
         variant: "destructive",
       })
     } finally {
