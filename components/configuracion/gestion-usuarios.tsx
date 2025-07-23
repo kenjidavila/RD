@@ -20,9 +20,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, Plus, Edit, Trash2, AlertCircle, CheckCircle } from "lucide-react"
+import { Users, Plus, Edit, Trash2, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { getAuthService, type AuthUser } from "@/lib/auth"
+import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 interface NewUser {
   nombre: string
@@ -42,11 +43,21 @@ export default function GestionUsuarios() {
     password: "",
     rol: "usuario",
   })
+  const [processing, setProcessing] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const { toast } = useToast()
   const authService = getAuthService()
+  const { reportError } = useConfiguracionTabs()
 
   useEffect(() => {
+    const stored = localStorage.getItem("usuarios")
+    if (stored) {
+      try {
+        setUsuarios(JSON.parse(stored))
+      } catch {
+        /* ignore */
+      }
+    }
     cargarUsuarios()
     cargarUsuarioActual()
   }, [])
@@ -75,12 +86,14 @@ export default function GestionUsuarios() {
       const result = await authService.getUsers(userData.empresa_id)
       if (result.success) {
         setUsuarios(result.data || [])
+        localStorage.setItem("usuarios", JSON.stringify(result.data || []))
       } else {
         toast({
           title: "Error",
           description: result.error,
           variant: "destructive",
         })
+        reportError("usuarios")
       }
     } catch (error) {
       console.error("Error cargando usuarios:", error)
@@ -89,6 +102,7 @@ export default function GestionUsuarios() {
         description: error instanceof Error ? error.message : "No se pudieron cargar los usuarios",
         variant: "destructive",
       })
+      reportError("usuarios")
     } finally {
       setLoading(false)
     }
@@ -97,12 +111,16 @@ export default function GestionUsuarios() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    setProcessing(true)
+
     if (!currentUser?.empresa_id) {
       toast({
         title: "Error",
         description: "No se pudo identificar la empresa",
         variant: "destructive",
       })
+      reportError("usuarios")
+      setProcessing(false)
       return
     }
 
@@ -117,6 +135,8 @@ export default function GestionUsuarios() {
             description: "No puede modificar su propio usuario administrador",
             variant: "destructive",
           })
+          reportError("usuarios")
+          setProcessing(false)
           return
         }
         // Actualizar usuario existente
@@ -134,6 +154,7 @@ export default function GestionUsuarios() {
           setDialogOpen(false)
           cargarUsuarios()
         } else {
+          reportError("usuarios")
           throw new Error(result.error)
         }
       } else {
@@ -148,6 +169,8 @@ export default function GestionUsuarios() {
             description: "Ya existe un usuario con ese correo electrónico",
             variant: "destructive",
           })
+          reportError("usuarios")
+          setProcessing(false)
           return
         }
 
@@ -166,6 +189,7 @@ export default function GestionUsuarios() {
           setDialogOpen(false)
           cargarUsuarios()
         } else {
+          reportError("usuarios")
           throw new Error(result.error)
         }
       }
@@ -184,6 +208,9 @@ export default function GestionUsuarios() {
         description: error.message || "No se pudo procesar la solicitud",
         variant: "destructive",
       })
+      reportError("usuarios")
+    } finally {
+      setProcessing(false)
     }
   }
 
@@ -228,6 +255,11 @@ export default function GestionUsuarios() {
           description: "El usuario se ha desactivado correctamente",
         })
         cargarUsuarios()
+        setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id))
+        localStorage.setItem(
+          "usuarios",
+          JSON.stringify(usuarios.filter((u) => u.id !== usuario.id)),
+        )
       } else {
         throw new Error(result.error)
       }
@@ -237,6 +269,7 @@ export default function GestionUsuarios() {
         description: error.message || "No se pudo desactivar el usuario",
         variant: "destructive",
       })
+      reportError("usuarios")
     }
   }
 
@@ -374,7 +407,12 @@ export default function GestionUsuarios() {
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit">{editingUser ? "Actualizar" : "Crear"} Usuario</Button>
+                  <Button type="submit" disabled={processing}>
+                    {processing && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {editingUser ? "Actualizar" : "Crear"} Usuario
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>

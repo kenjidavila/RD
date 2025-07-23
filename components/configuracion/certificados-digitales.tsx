@@ -15,9 +15,11 @@ import { createClient } from "@/lib/supabase"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
 import { useEmpresa } from "@/components/empresa-context"
+import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 export default function CertificadosDigitales() {
   const { empresaId } = useEmpresa()
+  const { reportError } = useConfiguracionTabs()
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -54,6 +56,7 @@ export default function CertificadosDigitales() {
       const msg = "Error al cargar certificados digitales"
       setError(msg)
       toast({ title: "Error", description: msg, variant: "destructive" })
+      reportError("certificados")
     } finally {
       setLoading(false)
     }
@@ -66,18 +69,20 @@ export default function CertificadosDigitales() {
     if (!empresaId) {
       setError("Empresa no identificada")
       toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
+      reportError("certificados")
       return
     }
 
     // Validar tipo de archivo
-    const allowedTypes = [".p12", ".pfx", ".pem", ".crt"]
+    const allowedTypes = [".p12", ".pfx", ".pem", ".crt", ".cer", ".key", ".txt"]
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf("."))
 
     if (!allowedTypes.includes(fileExtension)) {
-      setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt")
+      setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt")
       toast({
         title: "Error",
-        description: "Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt",
+        description:
+          "Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt",
         variant: "destructive",
       })
       return
@@ -157,6 +162,7 @@ export default function CertificadosDigitales() {
       logger.error("Error subiendo certificado", { error, empresaId })
       setError("Error al subir certificado digital")
       toast({ title: "Error", description: "Error al subir certificado digital", variant: "destructive" })
+      reportError("certificados")
     } finally {
       setUploading(false)
     }
@@ -168,6 +174,7 @@ export default function CertificadosDigitales() {
     if (!empresaId) {
       setError("Empresa no identificada")
       toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
+      reportError("certificados")
       return
     }
 
@@ -185,6 +192,7 @@ export default function CertificadosDigitales() {
 
       setSuccess("Certificado eliminado exitosamente")
       toast({ title: "Éxito", description: "Certificado eliminado exitosamente" })
+      setCertificados((prev) => prev.filter((c) => c.id !== certificado.id))
       await cargarCertificados()
 
       logger.info("Certificado eliminado", { empresaId, certificadoId: certificado.id })
@@ -192,6 +200,7 @@ export default function CertificadosDigitales() {
       logger.error("Error eliminando certificado", { error, empresaId })
       setError("Error al eliminar certificado")
       toast({ title: "Error", description: "Error al eliminar certificado", variant: "destructive" })
+      reportError("certificados")
     }
   }
 
@@ -199,6 +208,7 @@ export default function CertificadosDigitales() {
     if (!empresaId) {
       setError("Empresa no identificada")
       toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
+      reportError("certificados")
       return
     }
     try {
@@ -223,6 +233,7 @@ export default function CertificadosDigitales() {
       logger.error("Error descargando certificado", { error, empresaId })
       setError("Error al descargar certificado")
       toast({ title: "Error", description: "Error al descargar certificado", variant: "destructive" })
+      reportError("certificados")
     }
   }
 
