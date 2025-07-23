@@ -142,6 +142,27 @@ export default function PerfilEmpresa() {
       return
     }
 
+    const provinciaValida = provincias.find((p) => p.codigo === provinciaCodigo)
+    const municipioValido = municipios.find((m) => m.nombre === municipio)
+
+    if (!provinciaValida) {
+      toast({
+        title: "Provincia inválida",
+        description: "Seleccione una provincia válida",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!municipioValido) {
+      toast({
+        title: "Municipio inválido",
+        description: "Seleccione un municipio válido",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setSaving(true)
 
@@ -282,7 +303,15 @@ export default function PerfilEmpresa() {
                 onValueChange={(value) => {
                   setProvinciaCodigo(value)
                   const prov = provincias.find((p) => p.codigo === value)
-                  handleInputChange("provincia", prov?.nombre || "")
+                  if (prov) {
+                    handleInputChange("provincia", prov.nombre)
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "Código de provincia no válido",
+                      variant: "destructive",
+                    })
+                  }
                 }}
               >
                 <SelectTrigger>
