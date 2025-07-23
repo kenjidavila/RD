@@ -118,6 +118,7 @@ export default function PerfilEmpresa() {
         if (result.data) {
           setEmpresa(result.data)
           setEmpresaId(result.data.id)
+          reportSuccess("perfil")
         }
       } else if (response.status === 401) {
         toast({
@@ -145,6 +146,7 @@ export default function PerfilEmpresa() {
             : "No se pudieron cargar los datos de la empresa",
         variant: "destructive",
       })
+      reportError("perfil")
     } finally {
       setLoading(false)
     }
