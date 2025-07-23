@@ -473,6 +473,7 @@ export default function GestionUsuarios() {
             <AlertDescription>No hay usuarios registrados. Cree el primer usuario para comenzar.</AlertDescription>
           </Alert>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -548,6 +549,7 @@ export default function GestionUsuarios() {
               </Button>
             </div>
           )}
+          </>
         )}
       </CardContent>
     </Card>
