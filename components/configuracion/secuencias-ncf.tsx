@@ -8,12 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, XCircle, AlertCircle, Plus, Trash2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 interface SecuenciaNcf {
   id?: string
   tipo_comprobante: string
+  prefijo: string
   secuencia_inicial: string
   secuencia_final: string
   secuencia_actual: string
@@ -228,6 +230,7 @@ export default function SecuenciasNCF() {
     }
     const nuevaSecuencia: SecuenciaNcf = {
       tipo_comprobante: "",
+      prefijo: "",
       secuencia_inicial: "",
       secuencia_final: "",
       secuencia_actual: "",
@@ -252,6 +255,20 @@ export default function SecuenciasNCF() {
   }
 
   const actualizarSecuencia = (index: number, campo: keyof SecuenciaNcf, valor: any) => {
+    if (campo === "tipo_comprobante") {
+      if (secuencias.some((s, i) => i !== index && s.tipo_comprobante === valor)) {
+        toast({
+          title: "Duplicado",
+          description: "Ya existe una secuencia para ese tipo de comprobante",
+          variant: "destructive",
+        })
+        reportError("secuencias")
+        return
+      }
+    }
+    if (campo === "prefijo" && !/^[A-Za-z0-9]*$/.test(valor)) {
+      return
+    }
     setSecuencias((prev) =>
       prev.map((sec, i) => {
         if (i === index) {
@@ -283,12 +300,50 @@ export default function SecuenciasNCF() {
   }
 
   const guardarSecuencias = async () => {
+    if (saving) return
     setSaving(true)
     try {
+      if (!empresaRnc) {
+        toast({
+          title: "Empresa no configurada",
+          description: "Debe configurar el RNC de la empresa primero",
+          variant: "destructive",
+        })
+        reportError("secuencias")
+        setSaving(false)
+        return
+      }
       // Validar duplicados u solapamientos
       const tipos = new Set<string>()
       for (let i = 0; i < secuencias.length; i++) {
         const a = secuencias[i]
+        if (
+          !a.tipo_comprobante.trim() ||
+          !a.prefijo.trim() ||
+          !a.secuencia_inicial.trim() ||
+          !a.secuencia_final.trim() ||
+          !a.fecha_vencimiento.trim()
+        ) {
+          toast({
+            title: "Campos requeridos",
+            description: "Complete todos los campos de cada secuencia",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(a.fecha_vencimiento)) {
+          toast({
+            title: "Fecha inválida",
+            description: "La fecha de vencimiento debe tener formato AAAA-MM-DD",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
         if (tipos.has(a.tipo_comprobante)) {
           toast({
             title: "Error",
@@ -307,16 +362,6 @@ export default function SecuenciasNCF() {
           toast({
             title: "Validación pendiente",
             description: "Todas las secuencias deben validarse correctamente",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        if (!a.fecha_vencimiento) {
-          toast({
-            title: "Fecha requerida",
-            description: "Cada secuencia debe tener fecha de vencimiento",
             variant: "destructive",
           })
           reportError("secuencias")
@@ -478,6 +523,24 @@ export default function SecuenciasNCF() {
     )
   }
 
+  if (!empresaRnc) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Secuencias NCF</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Configure el perfil de la empresa antes de gestionar secuencias
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -526,6 +589,17 @@ export default function SecuenciasNCF() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`prefijo-${index}`}>Prefijo</Label>
+                <Input
+                  id={`prefijo-${index}`}
+                  value={secuencia.prefijo}
+                  onChange={(e) => actualizarSecuencia(index, "prefijo", e.target.value.toUpperCase())}
+                  placeholder="B01"
+                  maxLength={5}
+                />
               </div>
 
               <div className="space-y-2">
@@ -618,7 +692,7 @@ export default function SecuenciasNCF() {
                 <Label className="text-sm font-medium">e-NCF Generado:</Label>
                 <p className="text-sm font-mono">
                   E{empresaRnc || "000000000"}
-                  {secuencia.tipo_comprobante}
+                  {secuencia.prefijo}
                   {secuencia.secuencia_inicial}
                 </p>
               </div>
