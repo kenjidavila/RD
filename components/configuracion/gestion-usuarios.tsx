@@ -34,6 +34,8 @@ interface NewUser {
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState<AuthUser[]>([])
+  const [page, setPage] = useState(1)
+  const pageSize = 10
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<AuthUser | null>(null)
@@ -48,6 +50,17 @@ export default function GestionUsuarios() {
   const { toast } = useToast()
   const authService = getAuthService()
   const { reportError, reportSuccess } = useConfiguracionTabs()
+
+  const displayedUsers = usuarios.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  )
+
+  // Ajustar la página actual si la cantidad de usuarios cambia
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(usuarios.length / pageSize))
+    setPage((p) => Math.min(p, totalPages))
+  }, [usuarios.length])
 
   useEffect(() => {
     const stored = localStorage.getItem("usuarios")
@@ -88,6 +101,7 @@ export default function GestionUsuarios() {
         setUsuarios(result.data || [])
         localStorage.setItem("usuarios", JSON.stringify(result.data || []))
       } else {
+        localStorage.removeItem("usuarios")
         toast({
           title: "Error",
           description: result.error,
@@ -97,6 +111,7 @@ export default function GestionUsuarios() {
       }
     } catch (error) {
       console.error("Error cargando usuarios:", error)
+      localStorage.removeItem("usuarios")
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "No se pudieron cargar los usuarios",
@@ -112,6 +127,32 @@ export default function GestionUsuarios() {
     e.preventDefault()
 
     setProcessing(true)
+
+    if (!newUser.nombre.trim() || !newUser.email.trim() || !newUser.rol) {
+      toast({
+        title: "Campos requeridos",
+        description: "Nombre, email y rol son obligatorios",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      setProcessing(false)
+      return
+    }
+
+    if (
+      editingUser &&
+      newUser.nombre === editingUser.nombre &&
+      newUser.email === editingUser.email &&
+      newUser.rol === editingUser.rol &&
+      !newUser.password.trim()
+    ) {
+      toast({
+        title: "Sin cambios",
+        description: "No se realizaron modificaciones",
+      })
+      setProcessing(false)
+      return
+    }
 
     if (!currentUser?.empresa_id) {
       toast({
@@ -226,12 +267,12 @@ export default function GestionUsuarios() {
       return
     }
     setEditingUser(usuario)
-    setNewUser({
+    setNewUser((prev) => ({
+      ...prev,
       nombre: usuario.nombre,
       email: usuario.email,
-      password: "",
       rol: usuario.rol,
-    })
+    }))
     setDialogOpen(true)
   }
 
@@ -257,12 +298,10 @@ export default function GestionUsuarios() {
           description: "El usuario se ha desactivado correctamente",
         })
         reportSuccess("usuarios")
+        const updated = usuarios.filter((u) => u.id !== usuario.id)
+        setUsuarios(updated)
+        localStorage.setItem("usuarios", JSON.stringify(updated))
         cargarUsuarios()
-        setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id))
-        localStorage.setItem(
-          "usuarios",
-          JSON.stringify(usuarios.filter((u) => u.id !== usuario.id)),
-        )
       } else {
         throw new Error(result.error)
       }
@@ -394,9 +433,14 @@ export default function GestionUsuarios() {
                   )}
                   <div>
                     <Label htmlFor="rol">Rol</Label>
-                    <Select value={newUser.rol} onValueChange={(value: any) => setNewUser({ ...newUser, rol: value })}>
+                    <Select
+                      value={newUser.rol}
+                      onValueChange={(value: any) =>
+                        setNewUser({ ...newUser, rol: value })
+                      }
+                    >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccionar rol" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="usuario">Usuario</SelectItem>
@@ -429,6 +473,7 @@ export default function GestionUsuarios() {
             <AlertDescription>No hay usuarios registrados. Cree el primer usuario para comenzar.</AlertDescription>
           </Alert>
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -441,7 +486,7 @@ export default function GestionUsuarios() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usuarios.map((usuario) => (
+              {displayedUsers.map((usuario) => (
                 <TableRow key={usuario.id}>
                   <TableCell className="font-medium">{usuario.nombre}</TableCell>
                   <TableCell>{usuario.email}</TableCell>
@@ -454,14 +499,17 @@ export default function GestionUsuarios() {
                       <span className="text-sm text-green-600">Activo</span>
                     </div>
                   </TableCell>
-                  <TableCell>{new Date(usuario.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {usuario.created_at
+                      ? new Date(usuario.created_at).toLocaleDateString()
+                      : "-"}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEdit(usuario)}
-                        disabled={usuario.id === currentUser?.id}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -469,7 +517,6 @@ export default function GestionUsuarios() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(usuario)}
-                        disabled={usuario.id === currentUser?.id}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -479,6 +526,30 @@ export default function GestionUsuarios() {
               ))}
             </TableBody>
           </Table>
+          {usuarios.length > pageSize && (
+            <div className="flex justify-between items-center mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm">
+                Página {page} de {Math.ceil(usuarios.length / pageSize)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page * pageSize >= usuarios.length}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
+          </>
         )}
       </CardContent>
     </Card>

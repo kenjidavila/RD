@@ -34,11 +34,18 @@ export default function CertificadosDigitales() {
   useEffect(() => {
     if (empresaId) {
       cargarCertificados()
+    } else {
+      // Si no hay empresa definida, detener el indicador de carga
+      setLoading(false)
     }
   }, [empresaId])
 
   const cargarCertificados = async () => {
-    if (!empresaId) return
+    if (!empresaId) {
+      setError("Empresa no identificada")
+      setLoading(false)
+      return
+    }
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -62,9 +69,19 @@ export default function CertificadosDigitales() {
     }
   }
 
-  const subirCertificado = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+  const subirCertificado = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (uploading) return
+    const file = event.target.files && event.target.files[0]
+    if (!file) {
+      toast({
+        title: "Archivo requerido",
+        description: "Seleccione un certificado antes de continuar",
+        variant: "destructive",
+      })
+      return
+    }
 
     if (!empresaId) {
       setError("Empresa no identificada")

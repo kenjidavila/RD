@@ -99,6 +99,14 @@ export default function SecuenciasNCF() {
 
   const validarNCF = async (ncf: string, tipo: string, campo: "inicial" | "final", index: number) => {
     if (!ncf || ncf.length !== 11) return
+    if (!empresaRnc) {
+      toast({
+        title: "RNC no disponible",
+        description: "Configure el RNC de la empresa antes de validar",
+        variant: "destructive",
+      })
+      return
+    }
 
     // Actualizar estado a validando
     setSecuencias((prev) =>
@@ -180,6 +188,23 @@ export default function SecuenciasNCF() {
   }
 
   const agregarSecuencia = () => {
+    if (
+      secuencias.some(
+        (s) => !s.tipo_comprobante || !s.secuencia_inicial || !s.secuencia_final,
+      )
+    ) {
+      toast({
+        title: "Complete la secuencia actual",
+        description: "Debe completar la secuencia en edición antes de agregar otra",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (secuencias.length >= 10) {
+      toast({ title: "Límite alcanzado", description: "Máximo 10 secuencias", variant: "destructive" })
+      return
+    }
     const nuevaSecuencia: SecuenciaNcf = {
       tipo_comprobante: "",
       secuencia_inicial: "",
@@ -236,6 +261,19 @@ export default function SecuenciasNCF() {
       // Validar duplicados u solapamientos
       for (let i = 0; i < secuencias.length; i++) {
         const a = secuencias[i]
+        if (
+          a.validacion_inicial?.estado !== "valido" ||
+          a.validacion_final?.estado !== "valido"
+        ) {
+          toast({
+            title: "Validación pendiente",
+            description: "Todas las secuencias deben validarse correctamente",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
         if (secuencias.findIndex((s, idx) => s.tipo_comprobante === a.tipo_comprobante && idx !== i) !== -1) {
           toast({
             title: "Error",
