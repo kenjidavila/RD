@@ -47,7 +47,7 @@ export default function GestionUsuarios() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const { toast } = useToast()
   const authService = getAuthService()
-  const { reportError } = useConfiguracionTabs()
+  const { reportError, reportSuccess } = useConfiguracionTabs()
 
   useEffect(() => {
     const stored = localStorage.getItem("usuarios")
@@ -151,6 +151,7 @@ export default function GestionUsuarios() {
             title: "Usuario actualizado",
             description: "El usuario se ha actualizado correctamente",
           })
+          reportSuccess("usuarios")
           setDialogOpen(false)
           cargarUsuarios()
         } else {
@@ -186,6 +187,7 @@ export default function GestionUsuarios() {
             title: "Usuario creado",
             description: "El usuario se ha creado correctamente",
           })
+          reportSuccess("usuarios")
           setDialogOpen(false)
           cargarUsuarios()
         } else {
@@ -254,6 +256,7 @@ export default function GestionUsuarios() {
           title: "Usuario desactivado",
           description: "El usuario se ha desactivado correctamente",
         })
+        reportSuccess("usuarios")
         cargarUsuarios()
         setUsuarios((prev) => prev.filter((u) => u.id !== usuario.id))
         localStorage.setItem(

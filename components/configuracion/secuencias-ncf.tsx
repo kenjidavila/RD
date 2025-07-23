@@ -50,7 +50,7 @@ export default function SecuenciasNCF() {
   const [saving, setSaving] = useState(false)
   const [empresaRnc, setEmpresaRnc] = useState<string>("")
   const { toast } = useToast()
-  const { reportError } = useConfiguracionTabs()
+  const { reportError, reportSuccess } = useConfiguracionTabs()
 
   useEffect(() => {
     cargarSecuencias()
@@ -63,9 +63,17 @@ export default function SecuenciasNCF() {
       if (res.ok) {
         const result = await res.json()
         setEmpresaRnc(result.data?.rnc || "")
+      } else {
+        throw new Error("No se pudo obtener la empresa")
       }
     } catch (error) {
       console.error("Error obteniendo empresa:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo obtener la información de la empresa",
+        variant: "destructive",
+      })
+      reportError("secuencias")
     }
   }
 
@@ -228,6 +236,16 @@ export default function SecuenciasNCF() {
       // Validar duplicados u solapamientos
       for (let i = 0; i < secuencias.length; i++) {
         const a = secuencias[i]
+        if (secuencias.findIndex((s, idx) => s.tipo_comprobante === a.tipo_comprobante && idx !== i) !== -1) {
+          toast({
+            title: "Error",
+            description: "Ya existe una secuencia para ese tipo de comprobante",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
         if (
           a.secuencia_inicial.length !== 8 ||
           a.secuencia_final.length !== 8 ||
@@ -297,6 +315,7 @@ export default function SecuenciasNCF() {
           title: "Éxito",
           description: "Secuencias NCF guardadas correctamente",
         })
+        reportSuccess("secuencias")
         cargarSecuencias()
       } else {
         throw new Error("Error al guardar")
@@ -419,6 +438,7 @@ export default function SecuenciasNCF() {
                     value={secuencia.secuencia_inicial}
                     onChange={(e) => actualizarSecuencia(index, "secuencia_inicial", e.target.value)}
                     placeholder="00000001"
+                    pattern="\d*"
                     maxLength={8}
                   />
                   <Button
@@ -443,6 +463,7 @@ export default function SecuenciasNCF() {
                     value={secuencia.secuencia_final}
                     onChange={(e) => actualizarSecuencia(index, "secuencia_final", e.target.value)}
                     placeholder="00001000"
+                    pattern="\d*"
                     maxLength={8}
                   />
                   <Button
@@ -464,6 +485,7 @@ export default function SecuenciasNCF() {
                   value={secuencia.secuencia_actual}
                   onChange={(e) => actualizarSecuencia(index, "secuencia_actual", e.target.value)}
                   placeholder="00000001"
+                  pattern="\d*"
                   maxLength={8}
                 />
               </div>
