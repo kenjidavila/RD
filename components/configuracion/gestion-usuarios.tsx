@@ -102,6 +102,7 @@ export default function GestionUsuarios() {
       if (result.success) {
         setUsuarios(result.data || [])
         localStorage.setItem("usuarios", JSON.stringify(result.data || []))
+        reportSuccess("usuarios")
       } else {
         localStorage.removeItem("usuarios")
         toast({

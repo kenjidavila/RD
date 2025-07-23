@@ -79,6 +79,9 @@ export default function CertificadosDigitales() {
         })
       }
       setCertificados(certs)
+      if (certs.length > 0) {
+        reportSuccess("certificados")
+      }
       logger.info("Certificados cargados", { empresaId, count: certs.length })
     } catch (error) {
       logger.error("Error cargando certificados", { error, empresaId })
