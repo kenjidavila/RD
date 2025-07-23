@@ -105,9 +105,21 @@ export default function PersonalizacionFacturas() {
     try {
       const response = await fetch("/api/configuracion?tipo=personalizacion_facturas")
 
-      if (response.status === 401 || response.status === 404) {
+      if (response.status === 401) {
+        toast({
+          title: "Sesión requerida",
+          description: "Debe iniciar sesión para configurar las facturas",
+          variant: "destructive",
+        })
         router.push("/perfil-empresa")
         return
+      }
+
+      if (response.status === 404) {
+        toast({
+          title: "Sin configuración",
+          description: "No se encontró configuración previa, se creará una nueva",
+        })
       }
 
       const result = await response.json()
@@ -159,11 +171,32 @@ export default function PersonalizacionFacturas() {
     }
   }
 
-  const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
+  setFormData((prev) => ({
+    ...prev,
+    [field]: value,
+  }))
+}
+
+  const validateFormData = (): string | null => {
+    const hexColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+    if (!hexColor.test(formData.color_primario) || !hexColor.test(formData.color_secundario)) {
+      return "Los colores primario y secundario deben ser códigos hexadecimales válidos"
+    }
+    const numericFields = [
+      formData.papel_margenes_superior,
+      formData.papel_margenes_inferior,
+      formData.papel_margenes_izquierdo,
+      formData.papel_margenes_derecho,
+      formData.fuentes_tamaño_titulo,
+      formData.fuentes_tamaño_subtitulo,
+      formData.fuentes_tamaño_texto,
+      formData.fuentes_tamaño_pequeño,
+    ]
+    if (numericFields.some((n) => Number.isNaN(n) || n < 0)) {
+      return "Existen valores numéricos inválidos en la configuración"
+    }
+    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,6 +204,12 @@ export default function PersonalizacionFacturas() {
     setSaving(true)
 
     try {
+      const validationError = validateFormData()
+      if (validationError) {
+        toast({ title: "Error", description: validationError, variant: "destructive" })
+        return
+      }
+
       const response = await fetch("/api/configuracion", {
         method: "POST",
         headers: {
@@ -181,7 +220,20 @@ export default function PersonalizacionFacturas() {
           configuracion: formData,
         }),
       })
-      if (response.status === 401 || response.status === 404) {
+      if (response.status === 401) {
+        toast({
+          title: "Sesión requerida",
+          description: "Debe iniciar sesión para guardar la configuración",
+          variant: "destructive",
+        })
+        router.push("/perfil-empresa")
+        return
+      } else if (response.status === 404) {
+        toast({
+          title: "Empresa no encontrada",
+          description: "Debe configurar su empresa antes de personalizar facturas",
+          variant: "destructive",
+        })
         router.push("/perfil-empresa")
         return
       }

@@ -162,8 +162,9 @@ export default function SecuenciasNCF() {
   const generarSecuenciaActual = (inicial: string, tipo: string) => {
     if (!inicial || inicial.length !== 8) return ""
 
-    // Generar secuencia actual basada en la inicial
-    const numero = Number.parseInt(inicial)
+    const numero = Number.parseInt(inicial, 10)
+    if (Number.isNaN(numero)) return ""
+
     return (numero + 1).toString().padStart(8, "0")
   }
 
@@ -197,6 +198,13 @@ export default function SecuenciasNCF() {
     setSecuencias((prev) =>
       prev.map((sec, i) => {
         if (i === index) {
+          if (
+            (campo === "secuencia_inicial" || campo === "secuencia_final" || campo === "secuencia_actual") &&
+            !/^\d*$/.test(valor)
+          ) {
+            return sec
+          }
+
           const updated = { ...sec, [campo]: valor }
 
           // Auto-generar secuencia actual cuando se actualiza la inicial
@@ -214,6 +222,35 @@ export default function SecuenciasNCF() {
   const guardarSecuencias = async () => {
     setSaving(true)
     try {
+      // Validar duplicados u solapamientos
+      for (let i = 0; i < secuencias.length; i++) {
+        const a = secuencias[i]
+        const startA = parseInt(a.secuencia_inicial, 10)
+        const endA = parseInt(a.secuencia_final, 10)
+        if (Number.isNaN(startA) || Number.isNaN(endA)) {
+          toast({
+            title: "Error",
+            description: "Las secuencias deben ser numéricas",
+            variant: "destructive",
+          })
+          return
+        }
+        for (let j = i + 1; j < secuencias.length; j++) {
+          const b = secuencias[j]
+          if (a.tipo_comprobante !== b.tipo_comprobante) continue
+          const startB = parseInt(b.secuencia_inicial, 10)
+          const endB = parseInt(b.secuencia_final, 10)
+          if (startA <= endB && startB <= endA) {
+            toast({
+              title: "Error",
+              description: "Hay secuencias duplicadas o solapadas",
+              variant: "destructive",
+            })
+            return
+          }
+        }
+      }
+
       const response = await fetch("/api/configuracion/secuencias-ncf", {
         method: "POST",
         headers: {

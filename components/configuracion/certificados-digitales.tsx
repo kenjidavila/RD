@@ -110,6 +110,13 @@ export default function CertificadosDigitales() {
       setUploading(true)
       setError(null)
 
+      if (certificados.some((c) => c.nombre === file.name)) {
+        const msg = "Ya existe un certificado con el mismo nombre"
+        setError(msg)
+        toast({ title: "Error", description: msg, variant: "destructive" })
+        return
+      }
+
       // Subir archivo a Supabase Storage
       const fileName = `${empresaId}/${Date.now()}-${file.name}`
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -121,7 +128,10 @@ export default function CertificadosDigitales() {
       // Obtener URL pública del archivo
       const {
         data: { publicUrl },
+        error: urlError,
       } = supabase.storage.from("certificados").getPublicUrl(fileName)
+
+      if (urlError || !publicUrl) throw urlError || new Error("No se pudo obtener URL pública")
 
       // Guardar información del certificado en la base de datos
       const { error: dbError } = await supabase.from("certificados_digitales").insert({
@@ -195,13 +205,17 @@ export default function CertificadosDigitales() {
       const blob = await response.blob()
 
       const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = certificado.nombre
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+
+      try {
+        const a = document.createElement("a")
+        a.href = url
+        a.download = certificado.nombre
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      } finally {
+        window.URL.revokeObjectURL(url)
+      }
 
       logger.info("Certificado descargado", { empresaId, certificadoId: certificado.id })
     } catch (error) {

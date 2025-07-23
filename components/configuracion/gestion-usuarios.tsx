@@ -108,6 +108,17 @@ export default function GestionUsuarios() {
 
     try {
       if (editingUser) {
+        if (
+          editingUser.id === currentUser?.id &&
+          currentUser.rol === "admin"
+        ) {
+          toast({
+            title: "Acción no permitida",
+            description: "No puede modificar su propio usuario administrador",
+            variant: "destructive",
+          })
+          return
+        }
         // Actualizar usuario existente
         const result = await authService.updateUser(editingUser.id, {
           nombre: newUser.nombre,
@@ -126,6 +137,20 @@ export default function GestionUsuarios() {
           throw new Error(result.error)
         }
       } else {
+        // Validar email duplicado
+        if (
+          usuarios.some(
+            (u) => u.email.toLowerCase() === newUser.email.toLowerCase(),
+          )
+        ) {
+          toast({
+            title: "Error",
+            description: "Ya existe un usuario con ese correo electrónico",
+            variant: "destructive",
+          })
+          return
+        }
+
         // Crear nuevo usuario
         const result = await authService.signUp(newUser.email, newUser.password, {
           nombre: newUser.nombre,
@@ -175,6 +200,15 @@ export default function GestionUsuarios() {
 
   const handleDelete = async (usuario: AuthUser) => {
     if (!confirm(`¿Está seguro de que desea desactivar al usuario ${usuario.nombre}?`)) {
+      return
+    }
+
+    if (usuario.id === currentUser?.id) {
+      toast({
+        title: "Acción no permitida",
+        description: "No puede desactivar su propio usuario administrador",
+        variant: "destructive",
+      })
       return
     }
 

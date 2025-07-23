@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import {
   Card,
   CardContent,
@@ -43,6 +44,7 @@ interface EmpresaData {
   updated_at?: string
 }
 export default function PerfilEmpresa() {
+  const router = useRouter()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [provinciaCodigo, setProvinciaCodigo] = useState("")
@@ -61,9 +63,14 @@ export default function PerfilEmpresa() {
   const { toast } = useToast()
 
   useEffect(() => {
-    cargarDatosEmpresa()
     DGIICatalogsService.getProvincias().then(setProvincias)
   }, [])
+
+  useEffect(() => {
+    if (provincias.length > 0) {
+      cargarDatosEmpresa()
+    }
+  }, [provincias])
 
   useEffect(() => {
     if (provinciaCodigo) {
@@ -95,10 +102,6 @@ export default function PerfilEmpresa() {
         const result = await response.json()
         if (result.data) {
           setEmpresa(result.data)
-          const prov = provincias.find(
-            (p) => p.nombre === result.data.provincia,
-          )
-          setProvinciaCodigo(prov?.codigo || "")
         }
       } else if (response.status === 401) {
         toast({
@@ -184,12 +187,9 @@ export default function PerfilEmpresa() {
       const result = await response.json()
       if (result.data) {
         setEmpresa(result.data)
-        const prov = provincias.find(
-          (p) => p.nombre === result.data.provincia,
-        )
-        setProvinciaCodigo(prov?.codigo || "")
         // reload data from backend to ensure state matches stored values
         await cargarDatosEmpresa()
+        router.refresh()
       }
 
       toast({
