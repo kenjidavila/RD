@@ -11,6 +11,16 @@ export type ConfigTabKey =
   | "personalizacion"
   | "resumen"
 
+export const CONFIG_TABS: ConfigTabKey[] = [
+  "perfil",
+  "certificados",
+  "usuarios",
+  "secuencias",
+  "contingencia",
+  "personalizacion",
+  "resumen",
+]
+
 interface TabStatus {
   state: "idle" | "pending" | "success" | "error"
   message?: string
@@ -50,7 +60,11 @@ export function ConfiguracionTabsProvider({
   reportSuccess: (tab: ConfigTabKey) => void
   goToTab?: (tab: ConfigTabKey) => void
 }) {
-  const [statuses, setStatuses] = useState<Record<ConfigTabKey, TabStatus>>({} as Record<ConfigTabKey, TabStatus>)
+  const initialStatuses = CONFIG_TABS.reduce(
+    (acc, key) => ({ ...acc, [key]: { state: "idle" as const } }),
+    {} as Record<ConfigTabKey, TabStatus>,
+  )
+  const [statuses, setStatuses] = useState<Record<ConfigTabKey, TabStatus>>(initialStatuses)
   const errors = useMemo(
     () =>
       Object.fromEntries(
@@ -99,7 +113,7 @@ export function ConfiguracionTabsProvider({
   }
 
   const resetStatus = () => {
-    setStatuses({} as Record<ConfigTabKey, TabStatus>)
+    setStatuses(initialStatuses)
   }
 
   return (

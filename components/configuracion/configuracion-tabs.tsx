@@ -16,6 +16,7 @@ function TabTriggerWithError({
     <TabsTrigger
       value={value}
       className={errors[value] ? "text-red-600" : undefined}
+      aria-controls={`${value}-panel`}
     >
       {children || <span>Sin título</span>}
       {statuses[value]?.state === "pending" && (
@@ -78,7 +79,15 @@ export default function ConfiguracionTabs() {
     >
       <Tabs
         value={currentTab}
-        onValueChange={setCurrentTab}
+        onValueChange={(tab) => {
+          const hasError = statuses[currentTab]?.state === "error"
+          if (hasError) {
+            if (!confirm("Hay errores sin corregir en este formulario. ¿Desea cambiar de pestaña?")) {
+              return
+            }
+          }
+          setCurrentTab(tab)
+        }}
         className="space-y-6"
       >
       <TabsList className="grid w-full grid-cols-7">

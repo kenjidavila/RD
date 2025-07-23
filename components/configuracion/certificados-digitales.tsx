@@ -18,6 +18,9 @@ import type { CertificadoDigital } from "@/types/database"
 import { useEmpresa } from "@/components/empresa-context"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
+const CERTS_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_CERTS_BUCKET || "certificados"
+
 export default function CertificadosDigitales() {
   const { empresaId } = useEmpresa()
   const { reportError, reportSuccess } = useConfiguracionTabs()
@@ -61,9 +64,13 @@ export default function CertificadosDigitales() {
 
       let certs = data || []
       // Verificar existencia en storage
-      const { data: stored } = await supabase.storage
-        .from("certificados")
-        .list(`${empresaId}`)
+      const {
+        data: stored,
+        error: storageListError,
+      } = await supabase.storage.from(CERTS_BUCKET).list(`${empresaId}`)
+      if (storageListError) {
+        throw storageListError
+      }
       if (stored) {
         const names = new Set(stored.map((f) => f.name))
         certs = certs.filter((c) => {
@@ -187,9 +194,10 @@ export default function CertificadosDigitales() {
       }
 
       // Subir archivo a Supabase Storage
-      const fileName = `${empresaId}/${Date.now()}-${file.name}`
+      const sanitized = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")
+      const fileName = `${empresaId}/${Date.now()}-${sanitized}`
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("certificados")
+        .from(CERTS_BUCKET)
         .upload(fileName, file)
 
       if (uploadError) {
@@ -200,7 +208,7 @@ export default function CertificadosDigitales() {
       const {
         data: { publicUrl },
         error: urlError,
-      } = supabase.storage.from("certificados").getPublicUrl(fileName)
+      } = supabase.storage.from(CERTS_BUCKET).getPublicUrl(fileName)
 
       if (urlError || !publicUrl) throw urlError || new Error("No se pudo obtener URL pública")
 
@@ -270,7 +278,10 @@ export default function CertificadosDigitales() {
       // Eliminar archivo de storage
       const fileName = certificado.archivo_url.split("/").pop()
       if (fileName) {
-        await supabase.storage.from("certificados").remove([`${empresaId}/${fileName}`])
+        const { error: removeErr } = await supabase.storage
+          .from(CERTS_BUCKET)
+          .remove([`${empresaId}/${fileName}`])
+        if (removeErr) throw removeErr
       }
 
       // Eliminar registro de base de datos

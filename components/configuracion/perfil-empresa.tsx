@@ -184,6 +184,26 @@ export default function PerfilEmpresa() {
       return
     }
 
+    if (!/^\+?[0-9\-()\s]{7,20}$/.test(telefono)) {
+      toast({
+        title: "Teléfono inválido",
+        description: "Ingrese un teléfono válido",
+        variant: "destructive",
+      })
+      reportError("perfil")
+      return
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({
+        title: "Email inválido",
+        description: "Ingrese un correo electrónico válido",
+        variant: "destructive",
+      })
+      reportError("perfil")
+      return
+    }
+
     const provinciaValida = provincias.find((p) => p.codigo === provinciaCodigo)
     const municipioValido = municipios.find((m) => m.nombre === municipio)
 
