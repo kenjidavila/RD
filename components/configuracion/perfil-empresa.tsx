@@ -48,7 +48,7 @@ interface EmpresaData {
 export default function PerfilEmpresa() {
   const router = useRouter()
   const { setEmpresaId } = useEmpresa()
-  const { reportError } = useConfiguracionTabs()
+  const { reportError, reportSuccess } = useConfiguracionTabs()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [provinciaCodigo, setProvinciaCodigo] = useState("")
@@ -215,6 +215,7 @@ export default function PerfilEmpresa() {
         title: "Datos guardados",
         description: "Los datos de la empresa se han guardado correctamente",
       })
+      reportSuccess("perfil")
     } catch (error: any) {
       console.error("Error guardando datos:", error)
       toast({

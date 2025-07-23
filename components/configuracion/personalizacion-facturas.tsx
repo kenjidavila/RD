@@ -64,7 +64,7 @@ export default function PersonalizacionFacturas() {
   const [showPreview, setShowPreview] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
-  const { reportError } = useConfiguracionTabs()
+  const { reportError, reportSuccess } = useConfiguracionTabs()
 
   const [formData, setFormData] = useState<PersonalizacionConfig>({
     mostrar_logo: true,
@@ -272,6 +272,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
         title: "Éxito",
         description: "Configuración de facturas guardada correctamente",
       })
+      reportSuccess("personalizacion")
 
       await fetchConfiguracion()
     } catch (error) {

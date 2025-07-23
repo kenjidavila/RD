@@ -19,7 +19,7 @@ import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 export default function CertificadosDigitales() {
   const { empresaId } = useEmpresa()
-  const { reportError } = useConfiguracionTabs()
+  const { reportError, reportSuccess } = useConfiguracionTabs()
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -152,6 +152,7 @@ export default function CertificadosDigitales() {
 
       setSuccess("Certificado digital subido exitosamente")
       toast({ title: "Éxito", description: "Certificado digital subido exitosamente" })
+      reportSuccess("certificados")
       await cargarCertificados()
 
       // Limpiar input
@@ -192,6 +193,7 @@ export default function CertificadosDigitales() {
 
       setSuccess("Certificado eliminado exitosamente")
       toast({ title: "Éxito", description: "Certificado eliminado exitosamente" })
+      reportSuccess("certificados")
       setCertificados((prev) => prev.filter((c) => c.id !== certificado.id))
       await cargarCertificados()
 
@@ -292,7 +294,7 @@ export default function CertificadosDigitales() {
             <Input
               id="certificado-upload"
               type="file"
-              accept=".p12,.pfx,.pem,.crt"
+              accept=".p12,.pfx,.pem,.crt,.cer,.key,.txt"
               onChange={subirCertificado}
               disabled={uploading}
               className="flex-1"

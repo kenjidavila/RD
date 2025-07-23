@@ -24,8 +24,15 @@ export default function ConfiguracionTabs() {
     }
   }
 
+  const handleSuccess = (tab: string) => {
+    setCurrentTab(tab)
+  }
+
   return (
-    <ConfiguracionTabsProvider reportError={handleError}>
+    <ConfiguracionTabsProvider
+      reportError={handleError}
+      reportSuccess={handleSuccess}
+    >
       <Tabs
         value={currentTab}
         onValueChange={setCurrentTab}
