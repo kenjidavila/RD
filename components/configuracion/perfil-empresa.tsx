@@ -95,6 +95,10 @@ export default function PerfilEmpresa() {
         const result = await response.json()
         if (result.data) {
           setEmpresa(result.data)
+          const prov = provincias.find(
+            (p) => p.nombre === result.data.provincia,
+          )
+          setProvinciaCodigo(prov?.codigo || "")
         }
       } else if (response.status === 401) {
         toast({
@@ -142,6 +146,27 @@ export default function PerfilEmpresa() {
       return
     }
 
+    const provinciaValida = provincias.find((p) => p.codigo === provinciaCodigo)
+    const municipioValido = municipios.find((m) => m.nombre === municipio)
+
+    if (!provinciaValida) {
+      toast({
+        title: "Provincia inválida",
+        description: "Seleccione una provincia válida",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!municipioValido) {
+      toast({
+        title: "Municipio inválido",
+        description: "Seleccione un municipio válido",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
       setSaving(true)
 
@@ -159,6 +184,10 @@ export default function PerfilEmpresa() {
       const result = await response.json()
       if (result.data) {
         setEmpresa(result.data)
+        const prov = provincias.find(
+          (p) => p.nombre === result.data.provincia,
+        )
+        setProvinciaCodigo(prov?.codigo || "")
         // reload data from backend to ensure state matches stored values
         await cargarDatosEmpresa()
       }
