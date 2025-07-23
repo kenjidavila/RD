@@ -85,7 +85,7 @@ export function PDFStorageManager() {
       console.error("Error loading PDFs:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los PDFs almacenados",
+        description: error instanceof Error ? error.message : "No se pudieron cargar los PDFs almacenados",
         variant: "destructive",
       })
     } finally {

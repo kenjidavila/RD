@@ -86,7 +86,7 @@ export default function GestionUsuarios() {
       console.error("Error cargando usuarios:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los usuarios",
+        description: error instanceof Error ? error.message : "No se pudieron cargar los usuarios",
         variant: "destructive",
       })
     } finally {

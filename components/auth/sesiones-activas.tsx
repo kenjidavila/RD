@@ -43,7 +43,7 @@ export function SesionesActivas() {
       } else {
         toast({
           title: "Error",
-          description: "No se pudieron cargar las sesiones activas",
+          description: data.error || "No se pudieron cargar las sesiones activas",
           variant: "destructive",
         })
       }
@@ -51,7 +51,7 @@ export function SesionesActivas() {
       console.error("Error cargando sesiones:", error)
       toast({
         title: "Error",
-        description: "Error al cargar las sesiones activas",
+        description: error instanceof Error ? error.message : "Error al cargar las sesiones activas",
         variant: "destructive",
       })
     } finally {
@@ -89,7 +89,7 @@ export function SesionesActivas() {
       console.error("Error cerrando sesión:", error)
       toast({
         title: "Error",
-        description: "Error al cerrar la sesión",
+        description: error instanceof Error ? error.message : "Error al cerrar la sesión",
         variant: "destructive",
       })
     } finally {

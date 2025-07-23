@@ -116,7 +116,7 @@ export default function PerfilEmpresa() {
       console.error("Error cargando datos de empresa:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los datos de la empresa",
+        description: error instanceof Error ? error.message : "No se pudieron cargar los datos de la empresa",
         variant: "destructive",
       })
     } finally {
