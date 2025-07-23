@@ -27,7 +27,7 @@ import { Building2, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import type { Provincia, Municipio } from "@/lib/dgii-catalogs"
 import { DGIICatalogsService } from "@/lib/dgii-catalogs"
-import { useEmpresa } from "@/components/empresa-context"
+import { useEmpresa, type EmpresaProfile } from "@/components/empresa-context"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 
@@ -47,7 +47,7 @@ interface EmpresaData {
 }
 export default function PerfilEmpresa() {
   const router = useRouter()
-  const { empresaId, setEmpresaId } = useEmpresa()
+  const { empresaId, setEmpresaId, setEmpresa: setEmpresaGlobal } = useEmpresa()
   const { reportError, reportSuccess } = useConfiguracionTabs()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
@@ -118,6 +118,18 @@ export default function PerfilEmpresa() {
         if (result.data) {
           setEmpresa(result.data)
           setEmpresaId(result.data.id)
+          setEmpresaGlobal(result.data as EmpresaProfile)
+          try {
+            const stored = localStorage.getItem("user_data")
+            if (stored) {
+              const userData = JSON.parse(stored)
+              userData.rncEmpresa = result.data.rnc
+              localStorage.setItem("user_data", JSON.stringify(userData))
+              window.dispatchEvent(new Event("userDataUpdated"))
+            }
+          } catch (err) {
+            console.error("Error actualizando datos de usuario:", err)
+          }
           reportSuccess("perfil")
         }
       } else if (response.status === 401) {
@@ -268,9 +280,22 @@ export default function PerfilEmpresa() {
       if (result.data) {
         setEmpresa(result.data)
         setEmpresaId(result.data.id)
+        setEmpresaGlobal(result.data as EmpresaProfile)
         // reload data from backend to ensure state matches stored values
         await cargarDatosEmpresa()
         router.refresh()
+
+        try {
+          const stored = localStorage.getItem("user_data")
+          if (stored) {
+            const userData = JSON.parse(stored)
+            userData.rncEmpresa = result.data.rnc
+            localStorage.setItem("user_data", JSON.stringify(userData))
+            window.dispatchEvent(new Event("userDataUpdated"))
+          }
+        } catch (err) {
+          console.error("Error actualizando datos de usuario:", err)
+        }
       }
 
       toast({
