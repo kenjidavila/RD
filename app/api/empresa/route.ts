@@ -40,6 +40,27 @@ export async function POST(
     }
 
     const body = await request.json();
+    const {
+      rnc,
+      razon_social,
+      nombre_comercial,
+      direccion,
+      email,
+      telefono,
+      provincia,
+      municipio,
+    } = body;
+
+    const empresaInput = {
+      rnc: rnc?.trim(),
+      razon_social: razon_social?.trim(),
+      nombre_comercial: nombre_comercial?.trim() || null,
+      direccion: direccion?.trim() || null,
+      email: email?.trim(),
+      telefono: telefono?.trim() || null,
+      provincia: provincia?.trim() || null,
+      municipio: municipio?.trim() || null,
+    };
 
     // Obtener datos del usuario autenticado o crear registro básico si no existe
     const { data: usuario } = await supabase
@@ -109,7 +130,7 @@ export async function POST(
       ({ data: empresa, error } = await supabase
         .from("empresas")
         .update({
-          ...body,
+          ...empresaInput,
           owner_id: ownerRnc,
           updated_at: new Date().toISOString(),
         })
@@ -119,7 +140,7 @@ export async function POST(
     } else {
       ({ data: empresa, error } = await supabase
         .from("empresas")
-        .insert({ ...body, owner_id: ownerRnc })
+        .insert({ ...empresaInput, owner_id: ownerRnc })
         .select()
         .single());
     }

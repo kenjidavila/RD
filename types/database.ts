@@ -498,12 +498,6 @@ export interface Database {
           direccion: string | null
           provincia: string | null
           municipio: string | null
-          sector: string | null
-          tipo_contribuyente: string | null
-          regimen_tributario: string | null
-          actividad_economica: string | null
-          website: string | null
-          observaciones: string | null
           activa: boolean
           created_at: string
           updated_at: string
@@ -518,12 +512,6 @@ export interface Database {
           direccion?: string | null
           provincia?: string | null
           municipio?: string | null
-          sector?: string | null
-          tipo_contribuyente?: string | null
-          regimen_tributario?: string | null
-          actividad_economica?: string | null
-          website?: string | null
-          observaciones?: string | null
           activa?: boolean
           created_at?: string
           updated_at?: string
@@ -538,12 +526,6 @@ export interface Database {
           direccion?: string | null
           provincia?: string | null
           municipio?: string | null
-          sector?: string | null
-          tipo_contribuyente?: string | null
-          regimen_tributario?: string | null
-          actividad_economica?: string | null
-          website?: string | null
-          observaciones?: string | null
           activa?: boolean
           created_at?: string
           updated_at?: string

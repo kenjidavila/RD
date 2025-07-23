@@ -3,15 +3,29 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Building2, Save, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import type { Provincia, Municipio } from "@/lib/dgii-catalogs"
+import { DGIICatalogsService } from "@/lib/dgii-catalogs"
 
 
 interface EmpresaData {
@@ -24,51 +38,14 @@ interface EmpresaData {
   email: string
   provincia: string
   municipio: string
-  sector: string
-  actividad_economica: string
-  // Valores permitidos por la restricción de la base de datos
-  regimen_tributario: "Ordinario" | "RST" | "PST"
   logo_url?: string
   created_at?: string
   updated_at?: string
 }
-
-const provincias = [
-  "Distrito Nacional",
-  "Santo Domingo",
-  "Santiago",
-  "La Altagracia",
-  "San Pedro de Macorís",
-  "La Romana",
-  "Puerto Plata",
-  "Espaillat",
-  "La Vega",
-  "Monseñor Nouel",
-  "Duarte",
-  "María Trinidad Sánchez",
-  "Hermanas Mirabal",
-  "Samaná",
-  "Sánchez Ramírez",
-  "San Cristóbal",
-  "Peravia",
-  "Azua",
-  "San José de Ocoa",
-  "San Juan",
-  "Elías Piña",
-  "Baoruco",
-  "Barahona",
-  "Independencia",
-  "Pedernales",
-  "Monte Cristi",
-  "Dajabón",
-  "Santiago Rodríguez",
-  "Valverde",
-  "Monte Plata",
-  "Hato Mayor",
-  "El Seibo",
-]
-
 export default function PerfilEmpresa() {
+  const [provincias, setProvincias] = useState<Provincia[]>([])
+  const [municipios, setMunicipios] = useState<Municipio[]>([])
+  const [provinciaCodigo, setProvinciaCodigo] = useState("")
   const [empresa, setEmpresa] = useState<EmpresaData>({
     razon_social: "",
     nombre_comercial: "",
@@ -78,18 +55,36 @@ export default function PerfilEmpresa() {
     email: "",
     provincia: "",
     municipio: "",
-    sector: "",
-    actividad_economica: "",
-    regimen_tributario: "Ordinario",
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
 
-
   useEffect(() => {
     cargarDatosEmpresa()
+    DGIICatalogsService.getProvincias().then(setProvincias)
   }, [])
+
+  useEffect(() => {
+    if (provinciaCodigo) {
+      DGIICatalogsService.getMunicipiosByProvincia(provinciaCodigo).then((data) => {
+        setMunicipios(data)
+        if (!data.find((m) => m.nombre === empresa.municipio)) {
+          setEmpresa((prev) => ({ ...prev, municipio: "" }))
+        }
+      })
+    } else {
+      setMunicipios([])
+      setEmpresa((prev) => ({ ...prev, municipio: "" }))
+    }
+  }, [provinciaCodigo])
+
+  useEffect(() => {
+    if (empresa.provincia && provincias.length > 0) {
+      const prov = provincias.find((p) => p.nombre === empresa.provincia)
+      setProvinciaCodigo(prov?.codigo || "")
+    }
+  }, [empresa.provincia, provincias])
 
   const cargarDatosEmpresa = async () => {
     try {
@@ -128,17 +123,7 @@ export default function PerfilEmpresa() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const {
-      razon_social,
-      rnc,
-      telefono,
-      email,
-      provincia,
-      municipio,
-      actividad_economica,
-      regimen_tributario,
-      direccion,
-    } = empresa
+    const { razon_social, rnc, telefono, email, provincia, municipio, direccion } = empresa
 
     if (
       !razon_social ||
@@ -147,8 +132,6 @@ export default function PerfilEmpresa() {
       !email ||
       !provincia ||
       !municipio ||
-      !actividad_economica ||
-      !regimen_tributario ||
       !direccion
     ) {
       toast({
@@ -294,14 +277,21 @@ export default function PerfilEmpresa() {
 
             <div className="space-y-2">
               <Label htmlFor="provincia">Provincia *</Label>
-              <Select value={empresa.provincia} onValueChange={(value) => handleInputChange("provincia", value)}>
+              <Select
+                value={provinciaCodigo}
+                onValueChange={(value) => {
+                  setProvinciaCodigo(value)
+                  const prov = provincias.find((p) => p.codigo === value)
+                  handleInputChange("provincia", prov?.nombre || "")
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione una provincia" />
                 </SelectTrigger>
                 <SelectContent>
-                  {provincias.map((provincia) => (
-                    <SelectItem key={provincia} value={provincia}>
-                      {provincia}
+                  {provincias.map((prov) => (
+                    <SelectItem key={prov.codigo} value={prov.codigo}>
+                      {prov.nombre}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -310,52 +300,24 @@ export default function PerfilEmpresa() {
 
             <div className="space-y-2">
               <Label htmlFor="municipio">Municipio *</Label>
-              <Input
-                id="municipio"
-                value={empresa.municipio}
-                onChange={(e) => handleInputChange("municipio", e.target.value)}
-                required
-                placeholder="Municipio"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="sector">Sector</Label>
-              <Input
-                id="sector"
-                value={empresa.sector}
-                onChange={(e) => handleInputChange("sector", e.target.value)}
-                placeholder="Sector o barrio"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="actividad_economica">Actividad Económica *</Label>
-              <Input
-                id="actividad_economica"
-                value={empresa.actividad_economica}
-                onChange={(e) => handleInputChange("actividad_economica", e.target.value)}
-                required
-                placeholder="Descripción de la actividad económica"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="regimen_tributario">Régimen Tributario *</Label>
               <Select
-                value={empresa.regimen_tributario}
-                onValueChange={(value: any) => handleInputChange("regimen_tributario", value)}
+                value={empresa.municipio}
+                onValueChange={(value) => handleInputChange("municipio", value)}
+                disabled={!provinciaCodigo}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un régimen" />
+                  <SelectValue placeholder="Seleccione un municipio" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Ordinario">Ordinario</SelectItem>
-                  <SelectItem value="RST">RST (Régimen Simplificado de Tributación)</SelectItem>
-                  <SelectItem value="PST">PST (Procedimiento Simplificado de Tributación)</SelectItem>
+                  {municipios.map((mun) => (
+                    <SelectItem key={mun.codigo} value={mun.nombre}>
+                      {mun.nombre}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
+
           </div>
 
           <div className="space-y-2">

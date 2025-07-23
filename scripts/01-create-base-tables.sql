@@ -10,7 +10,6 @@ CREATE TABLE empresas (
     email VARCHAR(255),
     provincia VARCHAR(100),
     municipio VARCHAR(100),
-    sector VARCHAR(100),
     logo_url TEXT,
     activa BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

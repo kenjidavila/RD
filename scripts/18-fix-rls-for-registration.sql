@@ -24,7 +24,6 @@ CREATE OR REPLACE FUNCTION create_empresa_with_owner(
   direccion_param text DEFAULT NULL,
   provincia_param text DEFAULT NULL,
   municipio_param text DEFAULT NULL,
-  sector_param text DEFAULT NULL,
   owner_id_param uuid
 )
 RETURNS TABLE(
@@ -50,7 +49,6 @@ BEGIN
     direccion,
     provincia,
     municipio,
-    sector,
     owner_id,
     activa,
     fecha_registro,
@@ -64,7 +62,6 @@ BEGIN
     direccion_param,
     provincia_param,
     municipio_param,
-    sector_param,
     owner_id_param,
     true,
     NOW(),
@@ -255,7 +252,6 @@ BEGIN
     NULL, -- direccion
     NULL, -- provincia
     NULL, -- municipio
-    NULL, -- sector
     auth_user_id
   )
   LIMIT 1;
