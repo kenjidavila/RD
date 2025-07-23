@@ -15,7 +15,27 @@ const steps = [
 ] as const
 
 export default function ResumenConfiguracion() {
-  const { errors, successes, statuses, goToTab } = useConfiguracionTabs()
+  let context: ReturnType<typeof useConfiguracionTabs> | null = null
+  try {
+    context = useConfiguracionTabs()
+  } catch {
+    context = null
+  }
+
+  if (!context) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Resumen de Configuración</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-500">No configurado</p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const { statuses, goToTab } = context
 
   return (
     <Card>
@@ -24,8 +44,8 @@ export default function ResumenConfiguracion() {
       </CardHeader>
       <CardContent className="space-y-2">
         {steps.map((s) => {
-          const status = statuses[s.key]?.state || "idle"
-          const message = statuses[s.key]?.message
+          const status = statuses?.[s.key]?.state
+          const message = statuses?.[s.key]?.message
           return (
             <div
               key={s.key}
@@ -50,7 +70,7 @@ export default function ResumenConfiguracion() {
               ) : status === "pending" ? (
                 <span className="text-blue-600">Validando...</span>
               ) : (
-                <span className="text-gray-500">Pendiente</span>
+                <span className="text-gray-500">No configurado</span>
               )}
               {status === "error" && message && (
                 <Button

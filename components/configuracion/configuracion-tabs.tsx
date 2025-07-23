@@ -3,18 +3,22 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Check, Loader2 } from "lucide-react"
+import { useEmpresa } from "@/components/empresa-context"
 
 function TabTriggerWithError({
   value,
   children,
+  disabled,
 }: {
   value: ConfigTabKey
   children: React.ReactNode
+  disabled?: boolean
 }) {
   const { errors, successes, statuses } = useConfiguracionTabs()
   return (
     <TabsTrigger
       value={value}
+      disabled={disabled}
       className={errors[value] ? "text-red-600" : undefined}
       aria-controls={`${value}-panel`}
     >
@@ -43,8 +47,89 @@ import {
 import ResumenConfiguracion from "./resumen-configuracion"
 import { useState, useEffect } from "react"
 
+function TabsInner({
+  currentTab,
+  onChange,
+  empresaId,
+}: {
+  currentTab: ConfigTabKey
+  onChange: (t: ConfigTabKey) => void
+  empresaId: string | null
+}) {
+  const { statuses } = useConfiguracionTabs()
+
+  return (
+    <Tabs
+      value={currentTab}
+      onValueChange={(tab) => {
+        const state = statuses[currentTab]?.state
+        if (state === "pending") return
+        if (state === "error") {
+          if (!confirm("Hay errores sin corregir en este formulario. ¿Desea cambiar de pestaña?")) {
+            return
+          }
+        }
+        if (!empresaId && tab !== "perfil") return
+        onChange(tab as ConfigTabKey)
+      }}
+      className="space-y-6"
+    >
+      <TabsList className="grid w-full grid-cols-7">
+        <TabTriggerWithError value="perfil">Perfil Empresa</TabTriggerWithError>
+        <TabTriggerWithError value="certificados" disabled={!empresaId}>
+          Certificados
+        </TabTriggerWithError>
+        <TabTriggerWithError value="usuarios" disabled={!empresaId}>
+          Usuarios
+        </TabTriggerWithError>
+        <TabTriggerWithError value="secuencias" disabled={!empresaId}>
+          Secuencias NCF
+        </TabTriggerWithError>
+        <TabTriggerWithError value="contingencia" disabled={!empresaId}>
+          Contingencia
+        </TabTriggerWithError>
+        <TabTriggerWithError value="personalizacion" disabled={!empresaId}>
+          Personalización
+        </TabTriggerWithError>
+        <TabTriggerWithError value="resumen" disabled={!empresaId}>
+          Resumen
+        </TabTriggerWithError>
+      </TabsList>
+
+      <TabsContent value="perfil" className="space-y-4">
+        <PerfilEmpresa />
+      </TabsContent>
+
+      <TabsContent value="certificados" className="space-y-4">
+        <CertificadosDigitales />
+      </TabsContent>
+
+      <TabsContent value="usuarios" className="space-y-4">
+        <GestionUsuarios />
+      </TabsContent>
+
+      <TabsContent value="secuencias" className="space-y-4">
+        <SecuenciasNCF />
+      </TabsContent>
+
+      <TabsContent value="contingencia" className="space-y-4">
+        <ContingencyManagerComponent />
+      </TabsContent>
+
+      <TabsContent value="personalizacion" className="space-y-4">
+        <PersonalizacionFacturas />
+      </TabsContent>
+
+      <TabsContent value="resumen" className="space-y-4">
+        <ResumenConfiguracion />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
 export default function ConfiguracionTabs() {
   const [currentTab, setCurrentTab] = useState("perfil")
+  const { empresaId } = useEmpresa()
 
   useEffect(() => {
     const stored = localStorage.getItem("config_current_tab")
@@ -77,57 +162,11 @@ export default function ConfiguracionTabs() {
       reportSuccess={handleSuccess}
       goToTab={goToTab}
     >
-      <Tabs
-        value={currentTab}
-        onValueChange={(tab) => {
-          const hasError = statuses[currentTab]?.state === "error"
-          if (hasError) {
-            if (!confirm("Hay errores sin corregir en este formulario. ¿Desea cambiar de pestaña?")) {
-              return
-            }
-          }
-          setCurrentTab(tab)
-        }}
-        className="space-y-6"
-      >
-      <TabsList className="grid w-full grid-cols-7">
-        <TabTriggerWithError value="perfil">Perfil Empresa</TabTriggerWithError>
-        <TabTriggerWithError value="certificados">Certificados</TabTriggerWithError>
-        <TabTriggerWithError value="usuarios">Usuarios</TabTriggerWithError>
-        <TabTriggerWithError value="secuencias">Secuencias NCF</TabTriggerWithError>
-        <TabTriggerWithError value="contingencia">Contingencia</TabTriggerWithError>
-        <TabTriggerWithError value="personalizacion">Personalización</TabTriggerWithError>
-        <TabTriggerWithError value="resumen">Resumen</TabTriggerWithError>
-      </TabsList>
-
-      <TabsContent value="perfil" className="space-y-4">
-        <PerfilEmpresa />
-      </TabsContent>
-
-      <TabsContent value="certificados" className="space-y-4">
-        <CertificadosDigitales />
-      </TabsContent>
-
-      <TabsContent value="usuarios" className="space-y-4">
-        <GestionUsuarios />
-      </TabsContent>
-
-      <TabsContent value="secuencias" className="space-y-4">
-        <SecuenciasNCF />
-      </TabsContent>
-
-      <TabsContent value="contingencia" className="space-y-4">
-        <ContingencyManagerComponent />
-      </TabsContent>
-
-      <TabsContent value="personalizacion" className="space-y-4">
-        <PersonalizacionFacturas />
-      </TabsContent>
-
-      <TabsContent value="resumen" className="space-y-4">
-        <ResumenConfiguracion />
-      </TabsContent>
-    </Tabs>
+      <TabsInner
+        currentTab={currentTab as ConfigTabKey}
+        onChange={(t) => setCurrentTab(t)}
+        empresaId={empresaId}
+      />
     </ConfiguracionTabsProvider>
   )
 }
