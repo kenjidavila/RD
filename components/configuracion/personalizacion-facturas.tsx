@@ -63,6 +63,7 @@ export default function PersonalizacionFacturas() {
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
   const { toast } = useToast()
   const router = useRouter()
   const { reportError, reportSuccess } = useConfiguracionTabs()
@@ -199,23 +200,32 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-    if (!['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
+    if (!file) {
+      setLogoFile(null)
+      setLogoPreview(null)
+      return
+    }
+    if (!file.type.startsWith("image/")) {
       toast({
-        title: 'Tipo de archivo no soportado',
-        description: 'Solo se permiten imágenes PNG, JPG o SVG',
-        variant: 'destructive',
+        title: "Tipo de archivo no soportado",
+        description: "Solo se permiten imágenes PNG, JPG o SVG",
+        variant: "destructive",
       })
+      setLogoFile(null)
+      setLogoPreview(null)
       return
     }
     if (file.size > 2 * 1024 * 1024) {
       toast({
-        title: 'Archivo muy grande',
-        description: 'El logo no debe exceder 2MB',
-        variant: 'destructive',
+        title: "Archivo muy grande",
+        description: "El logo no debe exceder 2MB",
+        variant: "destructive",
       })
+      setLogoFile(null)
+      setLogoPreview(null)
       return
     }
+    setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
   }
 
@@ -232,6 +242,9 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     }
     if (!formData.fuentes_encabezado || !formData.fuentes_cuerpo || !formData.fuentes_numeros) {
       return "Debe seleccionar las fuentes a utilizar"
+    }
+    if (formData.mostrar_logo && logoFile && !logoFile.type.startsWith("image/")) {
+      return "El logo debe ser un archivo de imagen válido"
     }
     if (formData.marca_agua_habilitada && !formData.marca_agua_texto.trim()) {
       return "El texto de la marca de agua es obligatorio"
@@ -263,15 +276,19 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (saving) return
+
+    const validationError = validateFormData()
+    if (validationError) {
+      toast({ title: "Error", description: validationError, variant: "destructive" })
+      reportError("personalizacion")
+      return
+    }
+
     setSaving(true)
 
     try {
-      const validationError = validateFormData()
-      if (validationError) {
-        toast({ title: "Error", description: validationError, variant: "destructive" })
-        reportError("personalizacion")
-        return
-      }
 
       const payload = {
         ...formData,
