@@ -7,10 +7,30 @@ import GestionUsuarios from "./gestion-usuarios"
 import SecuenciasNCF from "./secuencias-ncf"
 import ContingencyManagerComponent from "../contingency/contingency-manager"
 import PersonalizacionFacturas from "./personalizacion-facturas"
+import {
+  ConfiguracionTabsProvider,
+  useConfiguracionTabs,
+} from "./configuracion-tabs-context"
+import { useState } from "react"
 
 export default function ConfiguracionTabs() {
+  const [currentTab, setCurrentTab] = useState("perfil")
+
+  const handleError = (tab: string) => {
+    setCurrentTab(tab)
+    // Scroll to top so toast is visible
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
   return (
-    <Tabs defaultValue="perfil" className="space-y-6">
+    <ConfiguracionTabsProvider reportError={handleError}>
+      <Tabs
+        value={currentTab}
+        onValueChange={setCurrentTab}
+        className="space-y-6"
+      >
       <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="perfil">Perfil Empresa</TabsTrigger>
         <TabsTrigger value="certificados">Certificados</TabsTrigger>
@@ -44,5 +64,6 @@ export default function ConfiguracionTabs() {
         <PersonalizacionFacturas />
       </TabsContent>
     </Tabs>
+    </ConfiguracionTabsProvider>
   )
 }

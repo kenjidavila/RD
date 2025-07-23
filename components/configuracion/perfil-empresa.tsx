@@ -28,6 +28,7 @@ import { useToast } from "@/hooks/use-toast"
 import type { Provincia, Municipio } from "@/lib/dgii-catalogs"
 import { DGIICatalogsService } from "@/lib/dgii-catalogs"
 import { useEmpresa } from "@/components/empresa-context"
+import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 
 interface EmpresaData {
@@ -47,6 +48,7 @@ interface EmpresaData {
 export default function PerfilEmpresa() {
   const router = useRouter()
   const { setEmpresaId } = useEmpresa()
+  const { reportError } = useConfiguracionTabs()
   const [provincias, setProvincias] = useState<Provincia[]>([])
   const [municipios, setMunicipios] = useState<Municipio[]>([])
   const [provinciaCodigo, setProvinciaCodigo] = useState("")
@@ -149,6 +151,17 @@ export default function PerfilEmpresa() {
         description: "Por favor complete todos los campos obligatorios",
         variant: "destructive",
       })
+      reportError("perfil")
+      return
+    }
+
+    if (!/^\d{9,11}$/.test(rnc)) {
+      toast({
+        title: "RNC inválido",
+        description: "El RNC debe contener solo números",
+        variant: "destructive",
+      })
+      reportError("perfil")
       return
     }
 
@@ -161,6 +174,7 @@ export default function PerfilEmpresa() {
         description: "Seleccione una provincia válida",
         variant: "destructive",
       })
+      reportError("perfil")
       return
     }
 
@@ -170,6 +184,7 @@ export default function PerfilEmpresa() {
         description: "Seleccione un municipio válido",
         variant: "destructive",
       })
+      reportError("perfil")
       return
     }
 
@@ -207,6 +222,7 @@ export default function PerfilEmpresa() {
         description: error.message || "No se pudieron guardar los datos",
         variant: "destructive",
       })
+      reportError("perfil")
     } finally {
       setSaving(false)
     }

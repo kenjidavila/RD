@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Loader2, CheckCircle, XCircle, AlertCircle, Plus, Trash2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 interface SecuenciaNcf {
   id?: string
@@ -49,6 +50,7 @@ export default function SecuenciasNCF() {
   const [saving, setSaving] = useState(false)
   const [empresaRnc, setEmpresaRnc] = useState<string>("")
   const { toast } = useToast()
+  const { reportError } = useConfiguracionTabs()
 
   useEffect(() => {
     cargarSecuencias()
@@ -81,6 +83,7 @@ export default function SecuenciasNCF() {
         description: error instanceof Error ? error.message : "No se pudieron cargar las secuencias NCF",
         variant: "destructive",
       })
+      reportError("secuencias")
     } finally {
       setLoading(false)
     }
@@ -225,6 +228,21 @@ export default function SecuenciasNCF() {
       // Validar duplicados u solapamientos
       for (let i = 0; i < secuencias.length; i++) {
         const a = secuencias[i]
+        if (
+          a.secuencia_inicial.length !== 8 ||
+          a.secuencia_final.length !== 8 ||
+          a.secuencia_actual.length !== 8
+        ) {
+          toast({
+            title: "Error",
+            description: "Todas las secuencias deben tener 8 dígitos",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
+
         const startA = parseInt(a.secuencia_inicial, 10)
         const endA = parseInt(a.secuencia_final, 10)
         if (Number.isNaN(startA) || Number.isNaN(endA)) {
@@ -233,6 +251,19 @@ export default function SecuenciasNCF() {
             description: "Las secuencias deben ser numéricas",
             variant: "destructive",
           })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
+
+        if (endA < startA) {
+          toast({
+            title: "Error",
+            description: "La secuencia final debe ser mayor a la inicial",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
           return
         }
         for (let j = i + 1; j < secuencias.length; j++) {
@@ -246,6 +277,8 @@ export default function SecuenciasNCF() {
               description: "Hay secuencias duplicadas o solapadas",
               variant: "destructive",
             })
+            reportError("secuencias")
+            setSaving(false)
             return
           }
         }
@@ -274,6 +307,7 @@ export default function SecuenciasNCF() {
         description: error instanceof Error ? error.message : "No se pudieron guardar las secuencias NCF",
         variant: "destructive",
       })
+      reportError("secuencias")
     } finally {
       setSaving(false)
     }

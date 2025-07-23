@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Palette, Eye, Save, FileText, Settings, Droplets } from "lucide-react"
+import { useConfiguracionTabs } from "./configuracion-tabs-context"
 
 interface PersonalizacionConfig {
   // Configuración básica
@@ -63,6 +64,7 @@ export default function PersonalizacionFacturas() {
   const [showPreview, setShowPreview] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const { reportError } = useConfiguracionTabs()
 
   const [formData, setFormData] = useState<PersonalizacionConfig>({
     mostrar_logo: true,
@@ -98,8 +100,23 @@ export default function PersonalizacionFacturas() {
   })
 
   useEffect(() => {
+    const draft = localStorage.getItem("personalizacion_facturas_draft")
+    if (draft) {
+      try {
+        setFormData(JSON.parse(draft))
+      } catch {
+        /* ignore */
+      }
+    }
     fetchConfiguracion()
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(
+      "personalizacion_facturas_draft",
+      JSON.stringify(formData),
+    )
+  }, [formData])
 
   const fetchConfiguracion = async () => {
     try {
@@ -166,6 +183,7 @@ export default function PersonalizacionFacturas() {
         description: error instanceof Error ? error.message : "No se pudo cargar la configuración de facturas",
         variant: "destructive",
       })
+      reportError("personalizacion")
     } finally {
       setLoading(false)
     }
@@ -210,6 +228,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
       const validationError = validateFormData()
       if (validationError) {
         toast({ title: "Error", description: validationError, variant: "destructive" })
+        reportError("personalizacion")
         return
       }
 
@@ -230,6 +249,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
           variant: "destructive",
         })
         router.push("/perfil-empresa")
+        reportError("personalizacion")
         return
       } else if (response.status === 404) {
         toast({
@@ -238,6 +258,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
           variant: "destructive",
         })
         router.push("/perfil-empresa")
+        reportError("personalizacion")
         return
       }
 
@@ -260,6 +281,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
         description: error instanceof Error ? error.message : "No se pudo guardar la configuración",
         variant: "destructive",
       })
+      reportError("personalizacion")
     } finally {
       setSaving(false)
     }
