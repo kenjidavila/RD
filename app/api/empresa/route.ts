@@ -75,17 +75,22 @@ export async function POST(
 
     if (error) throw error
 
-    const { error: userUpdateError } = await supabase
+    // Intentar vincular la empresa al registro de usuario si existe
+    const { data: usuario } = await supabase
       .from("usuarios")
-      .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
+      .select("id")
       .eq("auth_user_id", user.id)
+      .maybeSingle()
 
-    if (userUpdateError) {
-      console.error("Error vinculando empresa al usuario:", userUpdateError)
-      return NextResponse.json(
-        { success: false, error: "Error actualizando usuario" },
-        { status: 500 },
-      )
+    if (usuario) {
+      const { error: userUpdateError } = await supabase
+        .from("usuarios")
+        .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
+        .eq("id", usuario.id)
+
+      if (userUpdateError) {
+        console.error("Error vinculando empresa al usuario:", userUpdateError)
+      }
     }
 
     return NextResponse.json({ success: true, data: empresa, message: "Empresa guardada" })
