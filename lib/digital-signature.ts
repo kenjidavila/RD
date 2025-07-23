@@ -1,60 +1,104 @@
-import crypto from "crypto"
-import * as forge from "node-forge"
+import crypto from "crypto";
+import * as forge from "node-forge";
 
 export interface DigitalCertificate {
-  id: string
-  name: string
-  certificate: string
-  privateKey: string
-  expirationDate: Date
-  isActive: boolean
+  id: string;
+  name: string;
+  certificate: string;
+  privateKey: string;
+  expirationDate: Date;
+  isActive: boolean;
+}
+
+export interface ParsedPfx {
+  certificate: string;
+  privateKey: string;
+  expirationDate: Date;
 }
 
 export class DigitalSignatureService {
-  private certificates: Map<string, DigitalCertificate> = new Map()
+  private certificates: Map<string, DigitalCertificate> = new Map();
+
+  static parsePfx(
+    pfxData: Buffer | ArrayBuffer | string,
+    password: string,
+  ): ParsedPfx {
+    let binary = "";
+    if (Buffer.isBuffer(pfxData)) {
+      binary = pfxData.toString("binary");
+    } else if (typeof pfxData === "string") {
+      binary = Buffer.from(pfxData, "base64").toString("binary");
+    } else {
+      binary = Buffer.from(new Uint8Array(pfxData as ArrayBuffer)).toString(
+        "binary",
+      );
+    }
+
+    const asn1 = forge.asn1.fromDer(binary);
+    const p12 = forge.pkcs12.pkcs12FromAsn1(asn1, password);
+
+    const keyBags = p12.getBags({
+      bagType: forge.pki.oids.pkcs8ShroudedKeyBag,
+    });
+    const certBags = p12.getBags({ bagType: forge.pki.oids.certBag });
+
+    const key = keyBags[forge.pki.oids.pkcs8ShroudedKeyBag][0].key;
+    const cert = certBags[forge.pki.oids.certBag][0].cert;
+
+    return {
+      certificate: forge.pki.certificateToPem(cert),
+      privateKey: forge.pki.privateKeyToPem(key),
+      expirationDate: cert.validity.notAfter,
+    };
+  }
 
   addCertificate(certificate: DigitalCertificate): void {
-    this.certificates.set(certificate.id, certificate)
+    this.certificates.set(certificate.id, certificate);
   }
 
   getCertificate(id: string): DigitalCertificate | undefined {
-    return this.certificates.get(id)
+    return this.certificates.get(id);
   }
 
   signXML(xmlContent: string, certificateId: string): string {
-    const certificate = this.getCertificate(certificateId)
+    const certificate = this.getCertificate(certificateId);
     if (!certificate || !certificate.isActive) {
-      throw new Error("Certificado digital no válido o inactivo")
+      throw new Error("Certificado digital no válido o inactivo");
     }
 
     if (certificate.expirationDate < new Date()) {
-      throw new Error("Certificado digital vencido")
+      throw new Error("Certificado digital vencido");
     }
 
     try {
       // Cargar certificado y clave privada usando node-forge
-      const cert = forge.pki.certificateFromPem(certificate.certificate)
-      const privateKey = forge.pki.privateKeyFromPem(certificate.privateKey)
+      const cert = forge.pki.certificateFromPem(certificate.certificate);
+      const privateKey = forge.pki.privateKeyFromPem(certificate.privateKey);
 
       // Canonicalizar el XML
-      const canonicalXML = this.canonicalizeXML(xmlContent)
+      const canonicalXML = this.canonicalizeXML(xmlContent);
 
       // Crear hash SHA-256 del contenido canonicalizado
-      const md = forge.md.sha256.create()
-      md.update(canonicalXML, "utf8")
-      const hash = md.digest()
+      const md = forge.md.sha256.create();
+      md.update(canonicalXML, "utf8");
+      const hash = md.digest();
 
       // Firmar el hash con la clave privada
-      const signature = privateKey.sign(hash)
-      const signatureBase64 = forge.util.encode64(signature)
+      const signature = privateKey.sign(hash);
+      const signatureBase64 = forge.util.encode64(signature);
 
       // Crear el bloque de firma XML según estándar XMLDSig
-      const signedXML = this.embedXMLSignature(xmlContent, signatureBase64, hash.toHex(), cert)
+      const signedXML = this.embedXMLSignature(
+        xmlContent,
+        signatureBase64,
+        hash.toHex(),
+        cert,
+      );
 
-      return signedXML
+      return signedXML;
     } catch (error) {
-      console.error("Error en firma digital:", error)
-      throw new Error(`Error al firmar digitalmente: ${error}`)
+      console.error("Error en firma digital:", error);
+      throw new Error(`Error al firmar digitalmente: ${error}`);
     }
   }
 
@@ -64,7 +108,7 @@ export class DigitalSignatureService {
     return xmlContent
       .replace(/>\s+</g, "><") // Remover espacios entre elementos
       .replace(/\s+/g, " ") // Normalizar espacios
-      .trim()
+      .trim();
   }
 
   private embedXMLSignature(
@@ -74,11 +118,11 @@ export class DigitalSignatureService {
     certificate: forge.pki.Certificate,
   ): string {
     // Obtener información del certificado
-    const certPem = forge.pki.certificateToPem(certificate)
+    const certPem = forge.pki.certificateToPem(certificate);
     const certBase64 = certPem
       .replace("-----BEGIN CERTIFICATE-----", "")
       .replace("-----END CERTIFICATE-----", "")
-      .replace(/\n/g, "")
+      .replace(/\n/g, "");
 
     // Crear bloque de firma XML según estándar XMLDSig
     const signatureBlock = `
@@ -101,127 +145,145 @@ export class DigitalSignatureService {
           <X509Certificate>${certBase64}</X509Certificate>
         </X509Data>
       </KeyInfo>
-    </Signature>`
+    </Signature>`;
 
     // Insertar antes del cierre del elemento raíz
-    return xmlContent.replace("</ECF>", `${signatureBlock}</ECF>`)
+    return xmlContent.replace("</ECF>", `${signatureBlock}</ECF>`);
   }
 
   verifySignature(signedXML: string): boolean {
     try {
       // Extraer la firma y el certificado del XML
-      const signatureMatch = signedXML.match(/<SignatureValue>([^<]+)<\/SignatureValue>/)
-      const certMatch = signedXML.match(/<X509Certificate>([^<]+)<\/X509Certificate>/)
+      const signatureMatch = signedXML.match(
+        /<SignatureValue>([^<]+)<\/SignatureValue>/,
+      );
+      const certMatch = signedXML.match(
+        /<X509Certificate>([^<]+)<\/X509Certificate>/,
+      );
 
       if (!signatureMatch || !certMatch) {
-        return false
+        return false;
       }
 
-      const signatureBase64 = signatureMatch[1]
-      const certBase64 = certMatch[1]
+      const signatureBase64 = signatureMatch[1];
+      const certBase64 = certMatch[1];
 
       // Reconstruir el certificado
-      const certPem = `-----BEGIN CERTIFICATE-----\n${certBase64}\n-----END CERTIFICATE-----`
-      const cert = forge.pki.certificateFromPem(certPem)
+      const certPem = `-----BEGIN CERTIFICATE-----\n${certBase64}\n-----END CERTIFICATE-----`;
+      const cert = forge.pki.certificateFromPem(certPem);
 
       // Extraer la clave pública del certificado
-      const publicKey = cert.publicKey
+      const publicKey = cert.publicKey;
 
       // Obtener el contenido original sin la firma
-      const originalContent = signedXML.replace(/<Signature[^>]*>[\s\S]*?<\/Signature>/, "")
+      const originalContent = signedXML.replace(
+        /<Signature[^>]*>[\s\S]*?<\/Signature>/,
+        "",
+      );
 
       // Canonicalizar y crear hash
-      const canonicalContent = this.canonicalizeXML(originalContent)
-      const md = forge.md.sha256.create()
-      md.update(canonicalContent, "utf8")
-      const hash = md.digest()
+      const canonicalContent = this.canonicalizeXML(originalContent);
+      const md = forge.md.sha256.create();
+      md.update(canonicalContent, "utf8");
+      const hash = md.digest();
 
       // Verificar la firma
-      const signature = forge.util.decode64(signatureBase64)
-      return publicKey.verify(hash.bytes(), signature)
+      const signature = forge.util.decode64(signatureBase64);
+      return publicKey.verify(hash.bytes(), signature);
     } catch (error) {
-      console.error("Error verificando firma:", error)
-      return false
+      console.error("Error verificando firma:", error);
+      return false;
     }
   }
 
   extractSecurityCode(signedXML: string): string {
     try {
       // Extraer el valor de la firma
-      const signatureMatch = signedXML.match(/<SignatureValue>([^<]+)<\/SignatureValue>/)
+      const signatureMatch = signedXML.match(
+        /<SignatureValue>([^<]+)<\/SignatureValue>/,
+      );
       if (signatureMatch) {
-        const signatureValue = signatureMatch[1]
+        const signatureValue = signatureMatch[1];
         // Crear hash del valor de la firma para generar código de seguridad
-        const hash = crypto.createHash("sha256").update(signatureValue).digest("hex")
-        return hash.substring(0, 6).toUpperCase()
+        const hash = crypto
+          .createHash("sha256")
+          .update(signatureValue)
+          .digest("hex");
+        return hash.substring(0, 6).toUpperCase();
       }
 
       // Fallback: generar código basado en timestamp
-      const timestamp = Date.now().toString()
-      const hash = crypto.createHash("sha256").update(timestamp).digest("hex")
-      return hash.substring(0, 6).toUpperCase()
+      const timestamp = Date.now().toString();
+      const hash = crypto.createHash("sha256").update(timestamp).digest("hex");
+      return hash.substring(0, 6).toUpperCase();
     } catch (error) {
-      console.error("Error extrayendo código de seguridad:", error)
-      return "000000"
+      console.error("Error extrayendo código de seguridad:", error);
+      return "000000";
     }
   }
 
   // Método para validar certificado
   validateCertificate(certificateId: string): boolean {
-    const certificate = this.getCertificate(certificateId)
-    if (!certificate) return false
+    const certificate = this.getCertificate(certificateId);
+    if (!certificate) return false;
 
     try {
-      const cert = forge.pki.certificateFromPem(certificate.certificate)
+      const cert = forge.pki.certificateFromPem(certificate.certificate);
 
       // Verificar que el certificado no haya expirado
-      const now = new Date()
+      const now = new Date();
       if (now < cert.validity.notBefore || now > cert.validity.notAfter) {
-        return false
+        return false;
       }
 
       // Verificar que la clave privada corresponde al certificado
-      const privateKey = forge.pki.privateKeyFromPem(certificate.privateKey)
-      const publicKey = cert.publicKey as forge.pki.rsa.PublicKey
+      const privateKey = forge.pki.privateKeyFromPem(certificate.privateKey);
+      const publicKey = cert.publicKey as forge.pki.rsa.PublicKey;
 
       // Test básico: firmar y verificar un mensaje de prueba
-      const testMessage = "test-message"
-      const md = forge.md.sha256.create()
-      md.update(testMessage, "utf8")
-      const signature = privateKey.sign(md)
+      const testMessage = "test-message";
+      const md = forge.md.sha256.create();
+      md.update(testMessage, "utf8");
+      const signature = privateKey.sign(md);
 
-      md.start()
-      md.update(testMessage, "utf8")
-      return publicKey.verify(md.digest().bytes(), signature)
+      md.start();
+      md.update(testMessage, "utf8");
+      return publicKey.verify(md.digest().bytes(), signature);
     } catch (error) {
-      console.error("Error validando certificado:", error)
-      return false
+      console.error("Error validando certificado:", error);
+      return false;
     }
   }
 
   // Método para obtener información del certificado
   getCertificateInfo(certificateId: string): any {
-    const certificate = this.getCertificate(certificateId)
-    if (!certificate) return null
+    const certificate = this.getCertificate(certificateId);
+    if (!certificate) return null;
 
     try {
-      const cert = forge.pki.certificateFromPem(certificate.certificate)
+      const cert = forge.pki.certificateFromPem(certificate.certificate);
 
       return {
-        subject: cert.subject.attributes.map((attr) => `${attr.shortName}=${attr.value}`).join(", "),
-        issuer: cert.issuer.attributes.map((attr) => `${attr.shortName}=${attr.value}`).join(", "),
+        subject: cert.subject.attributes
+          .map((attr) => `${attr.shortName}=${attr.value}`)
+          .join(", "),
+        issuer: cert.issuer.attributes
+          .map((attr) => `${attr.shortName}=${attr.value}`)
+          .join(", "),
         serialNumber: cert.serialNumber,
         validFrom: cert.validity.notBefore,
         validTo: cert.validity.notAfter,
         fingerprint: forge.md.sha1
           .create()
-          .update(forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes())
+          .update(
+            forge.asn1.toDer(forge.pki.certificateToAsn1(cert)).getBytes(),
+          )
           .digest()
           .toHex(),
-      }
+      };
     } catch (error) {
-      console.error("Error obteniendo información del certificado:", error)
-      return null
+      console.error("Error obteniendo información del certificado:", error);
+      return null;
     }
   }
 }
