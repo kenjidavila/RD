@@ -4,7 +4,6 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -25,6 +24,7 @@ import { Users, Plus, Edit, Trash2, AlertCircle, CheckCircle, Loader2 } from "lu
 import { useToast } from "@/hooks/use-toast"
 import { getAuthService, type AuthUser } from "@/lib/auth"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
+import { useEmpresa } from "@/components/empresa-context"
 
 interface NewUser {
   nombre: string
@@ -46,12 +46,13 @@ export default function GestionUsuarios() {
     password: "",
     rol: "usuario",
   })
-  const [processing, setProcessing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const { toast } = useToast()
   const authService = getAuthService()
   const { reportError, reportSuccess } = useConfiguracionTabs()
+  const { empresaId } = useEmpresa()
 
   const displayedUsers = usuarios.slice(
     (page - 1) * pageSize,
@@ -121,16 +122,12 @@ export default function GestionUsuarios() {
         variant: "destructive",
       })
       reportError("usuarios")
-    } finally {
+  } finally {
       setLoading(false)
-    }
   }
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    setProcessing(true)
-
+  const validateFields = () => {
     if (!newUser.nombre.trim() || !newUser.email.trim() || !newUser.rol) {
       toast({
         title: "Campos requeridos",
@@ -138,19 +135,27 @@ export default function GestionUsuarios() {
         variant: "destructive",
       })
       reportError("usuarios")
-      setProcessing(false)
-      return
+      return false
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
+    if (!/^\S+@\S+\.\S+$/.test(newUser.email)) {
       toast({
         title: "Correo inválido",
         description: "Ingrese un correo electrónico válido",
         variant: "destructive",
       })
       reportError("usuarios")
-      setProcessing(false)
-      return
+      return false
+    }
+
+    if (!empresaId) {
+      toast({
+        title: "Empresa no identificada",
+        description: "No se pudo identificar la empresa",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      return false
     }
 
     if (!editingUser && newUser.password.trim().length < 8) {
@@ -160,8 +165,21 @@ export default function GestionUsuarios() {
         variant: "destructive",
       })
       reportError("usuarios")
-      setProcessing(false)
-      return
+      return false
+    }
+
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (saving) return
+    setSaving(true)
+
+    if (!validateFields()) {
+      setSaving(false);
+      return;
     }
 
     // Validar duplicidad de email en backend
@@ -179,7 +197,7 @@ export default function GestionUsuarios() {
           variant: "destructive",
         })
         reportError("usuarios")
-        setProcessing(false)
+        setSaving(false)
         return
       }
     } catch (err) {
@@ -197,7 +215,7 @@ export default function GestionUsuarios() {
         title: "Sin cambios",
         description: "No se realizaron modificaciones",
       })
-      setProcessing(false)
+      setSaving(false)
       return
     }
 
@@ -208,7 +226,7 @@ export default function GestionUsuarios() {
         variant: "destructive",
       })
       reportError("usuarios")
-      setProcessing(false)
+      setSaving(false)
       return
     }
 
@@ -224,13 +242,13 @@ export default function GestionUsuarios() {
             variant: "destructive",
           })
           reportError("usuarios")
-          setProcessing(false)
+          setSaving(false)
           return
         }
         if (newUser.rol !== editingUser.rol) {
           const confirmed = confirm("¿Confirma el cambio de rol del usuario?")
           if (!confirmed) {
-            setProcessing(false)
+            setSaving(false)
             return
           }
         }
@@ -267,7 +285,7 @@ export default function GestionUsuarios() {
             variant: "destructive",
           })
           reportError("usuarios")
-          setProcessing(false)
+          setSaving(false)
           return
         }
 
@@ -309,7 +327,7 @@ export default function GestionUsuarios() {
       })
       reportError("usuarios")
     } finally {
-      setProcessing(false)
+      setSaving(false)
     }
   }
 
@@ -512,8 +530,8 @@ export default function GestionUsuarios() {
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={processing}>
-                    {processing && (
+                  <Button type="submit" disabled={saving}>
+                    {saving && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
                     {editingUser ? "Actualizar" : "Crear"} Usuario
