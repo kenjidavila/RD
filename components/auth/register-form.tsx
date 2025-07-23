@@ -5,6 +5,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 import {
   ArrowLeft,
   Eye,
@@ -32,6 +33,7 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
     password: "",
     confirmPassword: "",
   })
+  const { toast } = useToast()
 
   const validatePassword = (password: string) => {
     const requirements = {
@@ -75,7 +77,13 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0]
+      toast({ title: "Error", description: firstError, variant: "destructive" })
+      return false
+    }
+
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,13 +123,26 @@ export default function RegisterForm({ onBackToLogin }: RegisterFormProps) {
 
       if (result.success) {
         console.log("✅ Registro exitoso")
-        alert("¡Registro exitoso! Ya puedes iniciar sesión con tus credenciales.")
+        toast({
+          title: "Registro exitoso",
+          description: "Ya puedes iniciar sesión con tus credenciales",
+        })
         onBackToLogin()
       } else {
+        toast({
+          title: "Error",
+          description: result.message || "Error en el registro",
+          variant: "destructive",
+        })
         setErrors({ general: result.message || "Error en el registro" })
       }
     } catch (error) {
       console.error("💥 Error en registro:", error)
+      toast({
+        title: "Error",
+        description: "Error de conexión. Verifica que el servidor esté funcionando.",
+        variant: "destructive",
+      })
       setErrors({ general: "Error de conexión. Verifica que el servidor esté funcionando." })
     } finally {
       setLoading(false)

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,17 +16,16 @@ interface LoginFormProps {
 export default function LoginForm({ onShowRegister }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
   const router = useRouter()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setError("")
 
     try {
       console.log("🔐 Enviando login...")
@@ -53,6 +53,8 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
       if (result.success) {
         console.log("✅ Login exitoso")
 
+        toast({ title: "Inicio de sesión", description: "Bienvenido" })
+
         // Guardar datos del usuario en localStorage
         if (result.data?.user) {
           localStorage.setItem("user", JSON.stringify(result.data.user))
@@ -63,11 +65,19 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
         router.push("/dashboard")
         router.refresh()
       } else {
-        setError(result.message || "Error en el inicio de sesión")
+        toast({
+          title: "Error",
+          description: result.message || "Error en el inicio de sesión",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("💥 Error:", error)
-      setError("Error de conexión. Verifica que el servidor esté funcionando.")
+      toast({
+        title: "Error",
+        description: "Error de conexión. Verifica que el servidor esté funcionando.",
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }
@@ -100,11 +110,6 @@ export default function LoginForm({ onShowRegister }: LoginFormProps) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
 
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-gray-700">
