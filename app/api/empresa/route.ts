@@ -1,24 +1,24 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
-import { SupabaseServerUtils } from "@/lib/supabase-server-utils"
+import { type NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { SupabaseServerUtils } from "@/lib/supabase-server-utils";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 interface ApiResponse {
-  success: boolean
-  message?: string
-  data?: any
-  error?: string
+  success: boolean;
+  message?: string;
+  data?: any;
+  error?: string;
 }
 
 export async function GET(): Promise<NextResponse<ApiResponse>> {
   try {
-    const { empresa } = await SupabaseServerUtils.getSessionAndEmpresa()
-    return NextResponse.json({ success: true, data: empresa })
+    const { empresa } = await SupabaseServerUtils.getSessionAndEmpresa();
+    return NextResponse.json({ success: true, data: empresa });
   } catch (error: any) {
-    const message = error.message || "Error inesperado"
-    const status = message === "Usuario no autenticado" ? 401 : 404
-    return NextResponse.json({ success: false, error: message }, { status })
+    const message = error.message || "Error inesperado";
+    const status = message === "Usuario no autenticado" ? 401 : 404;
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }
 
@@ -26,51 +26,87 @@ export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<ApiResponse>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: "No autorizado" },
         { status: 401 },
-      )
+      );
     }
 
-    const body = await request.json()
+    const body = await request.json();
 
-    // Obtener RNC del usuario autenticado
+    // Obtener datos del usuario autenticado o crear registro básico si no existe
     const { data: usuario } = await supabase
       .from("usuarios")
-      .select("rnc_cedula, id")
+      // @ts-ignore - columna custom en la tabla
+      .select("id, rnc_cedula, empresa_id")
       .eq("auth_user_id", user.id)
-      .maybeSingle()
+      .maybeSingle();
 
-    const ownerRnc = usuario?.rnc_cedula
+    let ownerRnc = usuario?.rnc_cedula;
+    let usuarioId = usuario?.id;
+
+    if (!usuario) {
+      // Si no existe el registro de usuario se crea con la información disponible
+      const { data: newUser, error: newUserError } = await supabase
+        .from("usuarios")
+        .insert({
+          // @ts-ignore - columnas adicionales no definidas en tipos
+          auth_user_id: user.id,
+          nombre: user.user_metadata?.nombre || "",
+          email: user.email,
+          rnc_cedula: body.rnc,
+          rol: "administrador",
+          activo: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select("id, rnc_cedula")
+        .single();
+
+      if (newUserError || !newUser) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: newUserError?.message || "Error creando usuario",
+          },
+          { status: 500 },
+        );
+      }
+
+      ownerRnc = newUser.rnc_cedula;
+      usuarioId = newUser.id;
+    }
+
     if (!ownerRnc) {
       return NextResponse.json(
         { success: false, error: "RNC no encontrado para el usuario" },
         { status: 400 },
-      )
+      );
     }
 
-    let currentEmpresa
+    let currentEmpresa;
     try {
-      ;({ empresa: currentEmpresa } = await SupabaseServerUtils.getSessionAndEmpresa())
+      ({ empresa: currentEmpresa } =
+        await SupabaseServerUtils.getSessionAndEmpresa());
     } catch (err: any) {
       if (err.message === "Empresa no encontrada") {
-        currentEmpresa = null
+        currentEmpresa = null;
       } else {
-        throw err
+        throw err;
       }
     }
 
-    let empresa
-    let error
+    let empresa;
+    let error;
     if (currentEmpresa) {
-      ;({ data: empresa, error } = await supabase
+      ({ data: empresa, error } = await supabase
         .from("empresas")
         .update({
           ...body,
@@ -79,41 +115,52 @@ export async function POST(
         })
         .eq("id", currentEmpresa.id)
         .select()
-        .single())
+        .single());
     } else {
-      ;({ data: empresa, error } = await supabase
+      ({ data: empresa, error } = await supabase
         .from("empresas")
         .insert({ ...body, owner_id: ownerRnc })
         .select()
-        .single())
+        .single());
     }
 
-    if (error) throw error
+    if (error) throw error;
 
     // Intentar vincular la empresa al registro de usuario si existe
-    const { data: usuarioRegistro } = await supabase
-      .from("usuarios")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .maybeSingle()
+    const usuarioRegistroId = usuarioId
+      ? usuarioId
+      : (
+          await supabase
+            .from("usuarios")
+            .select("id")
+            .eq("auth_user_id", user.id)
+            .maybeSingle()
+        ).data?.id;
 
-    if (usuarioRegistro) {
+    if (usuarioRegistroId) {
       const { error: userUpdateError } = await supabase
         .from("usuarios")
-        .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
-        .eq("id", usuarioRegistro.id)
+        .update({
+          empresa_id: empresa.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", usuarioRegistroId);
 
       if (userUpdateError) {
-        console.error("Error vinculando empresa al usuario:", userUpdateError)
+        console.error("Error vinculando empresa al usuario:", userUpdateError);
       }
     }
 
-    return NextResponse.json({ success: true, data: empresa, message: "Empresa guardada" })
+    return NextResponse.json({
+      success: true,
+      data: empresa,
+      message: "Empresa guardada",
+    });
   } catch (error: any) {
-    console.error("Error guardando empresa:", error)
+    console.error("Error guardando empresa:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Error inesperado" },
       { status: 500 },
-    )
+    );
   }
 }
