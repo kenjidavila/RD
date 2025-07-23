@@ -31,10 +31,10 @@ export class SupabaseServerUtils {
   static async getUserEmpresa(userId: string) {
     const supabase = await createClient()
 
-    // Intentar obtener la empresa a través de la tabla de usuarios
-    const { data: usuario, error: userError } = await supabase
+    // Obtener empresa y RNC a través de la tabla de usuarios
+    const { data: usuario } = await supabase
       .from("usuarios")
-      .select("empresa_id, empresas(*)")
+      .select("empresa_id, rnc_cedula, empresas(*)")
       .eq("auth_user_id", userId)
       .maybeSingle()
 
@@ -42,11 +42,11 @@ export class SupabaseServerUtils {
       return usuario.empresas
     }
 
-    // Si no existe registro en usuarios, buscar empresa por owner_id
+    // Buscar empresa por owner_id usando el RNC del usuario
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("*")
-      .eq("owner_id", userId)
+      .eq("owner_id", usuario?.rnc_cedula || "")
       .maybeSingle()
 
     if (empresaError || !empresa) {
@@ -69,9 +69,9 @@ export class SupabaseServerUtils {
       throw new Error("Usuario no autenticado")
     }
 
-    const { data: usuario, error: userError } = await supabase
+    const { data: usuario } = await supabase
       .from("usuarios")
-      .select("empresa_id, empresas(*)")
+      .select("empresa_id, rnc_cedula, empresas(*)")
       .eq("auth_user_id", user.id)
       .maybeSingle()
 
@@ -83,11 +83,11 @@ export class SupabaseServerUtils {
       }
     }
 
-    // Fallback: buscar empresa directamente por owner_id
+    // Fallback: buscar empresa por owner_id usando el RNC del usuario
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("*")
-      .eq("owner_id", user.id)
+      .eq("owner_id", usuario?.rnc_cedula || "")
       .maybeSingle()
 
     if (empresaError || !empresa) {

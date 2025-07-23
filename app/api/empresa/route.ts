@@ -41,6 +41,21 @@ export async function POST(
 
     const body = await request.json()
 
+    // Obtener RNC del usuario autenticado
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("rnc_cedula, id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle()
+
+    const ownerRnc = usuario?.rnc_cedula
+    if (!ownerRnc) {
+      return NextResponse.json(
+        { success: false, error: "RNC no encontrado para el usuario" },
+        { status: 400 },
+      )
+    }
+
     let currentEmpresa
     try {
       ;({ empresa: currentEmpresa } = await SupabaseServerUtils.getSessionAndEmpresa())
@@ -59,7 +74,7 @@ export async function POST(
         .from("empresas")
         .update({
           ...body,
-          owner_id: user.id,
+          owner_id: ownerRnc,
           updated_at: new Date().toISOString(),
         })
         .eq("id", currentEmpresa.id)
@@ -68,7 +83,7 @@ export async function POST(
     } else {
       ;({ data: empresa, error } = await supabase
         .from("empresas")
-        .insert({ ...body, owner_id: user.id })
+        .insert({ ...body, owner_id: ownerRnc })
         .select()
         .single())
     }
@@ -76,17 +91,17 @@ export async function POST(
     if (error) throw error
 
     // Intentar vincular la empresa al registro de usuario si existe
-    const { data: usuario } = await supabase
+    const { data: usuarioRegistro } = await supabase
       .from("usuarios")
       .select("id")
       .eq("auth_user_id", user.id)
       .maybeSingle()
 
-    if (usuario) {
+    if (usuarioRegistro) {
       const { error: userUpdateError } = await supabase
         .from("usuarios")
         .update({ empresa_id: empresa.id, updated_at: new Date().toISOString() })
-        .eq("id", usuario.id)
+        .eq("id", usuarioRegistro.id)
 
       if (userUpdateError) {
         console.error("Error vinculando empresa al usuario:", userUpdateError)

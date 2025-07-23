@@ -161,7 +161,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       provincia: data.empresa_provincia || null,
       municipio: data.empresa_municipio || null,
       sector: data.empresa_sector || null,
-      owner_id: authData.user.id, // ← CRÍTICO: asignar owner_id para RLS
+      owner_id: data.empresa_rnc,
       activa: true,
       fecha_registro: new Date().toISOString(),
       fecha_actualizacion: new Date().toISOString(),
