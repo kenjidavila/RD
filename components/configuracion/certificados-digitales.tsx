@@ -59,8 +59,20 @@ export default function CertificadosDigitales() {
 
       if (error) throw error
 
-      setCertificados(data || [])
-      logger.info("Certificados cargados", { empresaId, count: data?.length })
+      let certs = data || []
+      // Verificar existencia en storage
+      const { data: stored } = await supabase.storage
+        .from("certificados")
+        .list(`${empresaId}`)
+      if (stored) {
+        const names = new Set(stored.map((f) => f.name))
+        certs = certs.filter((c) => {
+          const name = c.archivo_url.split("/").pop()
+          return name && names.has(name)
+        })
+      }
+      setCertificados(certs)
+      logger.info("Certificados cargados", { empresaId, count: certs.length })
     } catch (error) {
       logger.error("Error cargando certificados", { error, empresaId })
       const msg = "Error al cargar certificados digitales"
@@ -72,8 +84,7 @@ export default function CertificadosDigitales() {
     }
   }
 
-  const subirCertificado = async () => {
-    if (uploading) return
+  const validateFields = () => {
     const file = selectedFile
     if (!file) {
       toast({
@@ -81,14 +92,13 @@ export default function CertificadosDigitales() {
         description: "Seleccione un certificado antes de continuar",
         variant: "destructive",
       })
-      return
+      return false
     }
-
     if (!empresaId) {
       setError("Empresa no identificada")
       toast({ title: "Error", description: "Empresa no identificada", variant: "destructive" })
       reportError("certificados")
-      return
+      return false
     }
 
     // Validar tipo de archivo
@@ -99,11 +109,10 @@ export default function CertificadosDigitales() {
       setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt")
       toast({
         title: "Error",
-        description:
-          "Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt",
+        description: "Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt",
         variant: "destructive",
       })
-      return
+      return false
     }
 
     // Validar tamaño (máximo 5MB)
@@ -114,8 +123,24 @@ export default function CertificadosDigitales() {
         description: "El archivo es demasiado grande. Máximo 5MB permitido",
         variant: "destructive",
       })
-      return
+      return false
     }
+    if ([".pfx", ".p12"].includes(fileExtension) && !password) {
+      toast({
+        title: "Contraseña requerida",
+        description: "Ingrese la contraseña del archivo PFX/P12",
+        variant: "destructive",
+      })
+      return false
+    }
+    return true
+  }
+
+  const subirCertificado = async () => {
+    if (uploading) return
+    if (!validateFields()) return
+    const file = selectedFile!
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf("."))
 
     try {
       setUploading(true)
@@ -167,7 +192,9 @@ export default function CertificadosDigitales() {
         .from("certificados")
         .upload(fileName, file)
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw new Error(uploadError.message || "Fallo la subida de archivo")
+      }
 
       // Obtener URL pública del archivo
       const {

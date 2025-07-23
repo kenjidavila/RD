@@ -55,14 +55,6 @@ export default function SecuenciasNCF() {
   useEffect(() => {
     cargarSecuencias()
     fetchEmpresa()
-    const stored = localStorage.getItem("secuencias_ncf")
-    if (stored) {
-      try {
-        setSecuencias(JSON.parse(stored))
-      } catch {
-        /* ignore */
-      }
-    }
   }, [])
 
   useEffect(() => {
@@ -80,9 +72,6 @@ export default function SecuenciasNCF() {
     )
   }, [empresaRnc])
 
-  useEffect(() => {
-    localStorage.setItem("secuencias_ncf", JSON.stringify(secuencias))
-  }, [secuencias])
 
   const fetchEmpresa = async () => {
     try {
@@ -195,8 +184,8 @@ export default function SecuenciasNCF() {
                 ...sec,
                 [`validacion_${campo}`]: {
                   valido: false,
-                  mensaje: "Error de conexión con DGII",
-                  estado: "invalido" as const,
+                  mensaje: "Validación no disponible",
+                  estado: "pendiente" as const,
                 },
               }
             : sec,
@@ -349,6 +338,17 @@ export default function SecuenciasNCF() {
           return
         }
 
+        if (a.secuencia_inicial.slice(0, 2) !== a.secuencia_final.slice(0, 2)) {
+          toast({
+            title: "Error",
+            description: "Secuencia inicial y final deben pertenecer al mismo tipo",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
+
         if (endA < startA) {
           toast({
             title: "Error",
@@ -392,7 +392,6 @@ export default function SecuenciasNCF() {
         })
         reportSuccess("secuencias")
         cargarSecuencias()
-        localStorage.setItem("secuencias_ncf_saved", "true")
       } else {
         throw new Error("Error al guardar")
       }

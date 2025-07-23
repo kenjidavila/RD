@@ -2,7 +2,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 
 function TabTriggerWithError({
   value,
@@ -11,13 +11,16 @@ function TabTriggerWithError({
   value: ConfigTabKey
   children: React.ReactNode
 }) {
-  const { errors, successes } = useConfiguracionTabs()
+  const { errors, successes, statuses } = useConfiguracionTabs()
   return (
     <TabsTrigger
       value={value}
       className={errors[value] ? "text-red-600" : undefined}
     >
-      {children}
+      {children || <span>Sin título</span>}
+      {statuses[value]?.state === "pending" && (
+        <Loader2 className="h-4 w-4 animate-spin ml-1" />
+      )}
       {successes[value] && !errors[value] && (
         <Check className="h-4 w-4 text-green-600 ml-1" />
       )}
@@ -65,10 +68,13 @@ export default function ConfiguracionTabs() {
     setCurrentTab(tab)
   }
 
+  const goToTab = (tab: ConfigTabKey) => setCurrentTab(tab)
+
   return (
     <ConfiguracionTabsProvider
       reportError={handleError}
       reportSuccess={handleSuccess}
+      goToTab={goToTab}
     >
       <Tabs
         value={currentTab}
