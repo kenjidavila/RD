@@ -48,6 +48,7 @@ export default function GestionUsuarios() {
   })
   const [processing, setProcessing] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const { toast } = useToast()
   const authService = getAuthService()
   const { reportError, reportSuccess } = useConfiguracionTabs()
@@ -244,6 +245,7 @@ export default function GestionUsuarios() {
             title: "Usuario actualizado",
             description: "El usuario se ha actualizado correctamente",
           })
+          setSuccessMessage("Usuario actualizado correctamente")
           reportSuccess("usuarios")
           setDialogOpen(false)
           cargarUsuarios()
@@ -280,6 +282,7 @@ export default function GestionUsuarios() {
             title: "Usuario creado",
             description: "El usuario se ha creado correctamente",
           })
+          setSuccessMessage("Usuario creado correctamente")
           reportSuccess("usuarios")
           setDialogOpen(false)
           cargarUsuarios()
@@ -318,6 +321,7 @@ export default function GestionUsuarios() {
       })
       return
     }
+    setSuccessMessage(null)
     setEditingUser(usuario)
     setNewUser((prev) => ({
       ...prev,
@@ -430,6 +434,7 @@ export default function GestionUsuarios() {
               <Button
                 onClick={() => {
                   setEditingUser(null)
+                  setSuccessMessage(null)
                   setNewUser({
                     nombre: "",
                     email: "",
@@ -519,6 +524,12 @@ export default function GestionUsuarios() {
         </div>
       </CardHeader>
       <CardContent>
+        {successMessage && (
+          <Alert className="mb-4">
+            <CheckCircle className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
         {usuarios.length === 0 ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />

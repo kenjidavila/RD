@@ -224,6 +224,9 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     if (!formData.color_primario || !formData.color_secundario) {
       return "Debe definir los colores primario y secundario"
     }
+    if (/[<>]/.test(formData.marca_agua_texto)) {
+      return "El texto de la marca de agua no puede contener HTML"
+    }
     if (!hexColor.test(formData.color_primario) || !hexColor.test(formData.color_secundario)) {
       return "Los colores primario y secundario deben ser códigos hexadecimales válidos"
     }
@@ -270,6 +273,12 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
         return
       }
 
+      const payload = {
+        ...formData,
+        color_primario: formData.color_primario || "#3B82F6",
+        color_secundario: formData.color_secundario || "#1E40AF",
+        marca_agua_texto: formData.marca_agua_texto.replace(/<[^>]+>/g, ""),
+      }
       const response = await fetch("/api/configuracion", {
         method: "POST",
         headers: {
@@ -277,7 +286,7 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
         },
         body: JSON.stringify({
           tipo: "personalizacion_facturas",
-          configuracion: formData,
+          configuracion: payload,
         }),
       })
       if (response.status === 401) {

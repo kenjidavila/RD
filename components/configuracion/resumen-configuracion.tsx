@@ -29,7 +29,7 @@ export default function ResumenConfiguracion() {
           return (
             <div
               key={s.key}
-              className="flex items-center justify-between text-sm"
+              className={`flex items-center justify-between text-sm ${status === "error" ? "bg-red-50 p-2 rounded" : ""}`}
             >
               <div className="flex items-center space-x-2">
                 <span>{s.label}</span>
@@ -38,9 +38,15 @@ export default function ResumenConfiguracion() {
                 )}
               </div>
               {status === "success" ? (
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <div className="flex items-center space-x-1 text-green-700">
+                  <CheckCircle className="h-4 w-4" />
+                  {message && <span>{message}</span>}
+                </div>
               ) : status === "error" ? (
-                <XCircle className="h-4 w-4 text-red-600" />
+                <div className="flex items-center space-x-1 text-red-700">
+                  <XCircle className="h-4 w-4" />
+                  {message && <span>{message}</span>}
+                </div>
               ) : status === "pending" ? (
                 <span className="text-blue-600">Validando...</span>
               ) : (

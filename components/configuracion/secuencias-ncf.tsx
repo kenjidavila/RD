@@ -177,6 +177,11 @@ export default function SecuenciasNCF() {
         ),
       )
     } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo validar el NCF",
+        variant: "destructive",
+      })
       setSecuencias((prev) =>
         prev.map((sec, i) =>
           i === index
@@ -261,7 +266,13 @@ export default function SecuenciasNCF() {
 
           // Auto-generar secuencia actual cuando se actualiza la inicial
           if (campo === "secuencia_inicial" && valor) {
-            updated.secuencia_actual = generarSecuenciaActual(valor, updated.tipo_comprobante)
+            const auto = generarSecuenciaActual(valor, updated.tipo_comprobante)
+            if (
+              !sec.secuencia_actual ||
+              sec.secuencia_actual === generarSecuenciaActual(sec.secuencia_inicial, sec.tipo_comprobante)
+            ) {
+              updated.secuencia_actual = auto
+            }
           }
 
           return updated
@@ -275,8 +286,20 @@ export default function SecuenciasNCF() {
     setSaving(true)
     try {
       // Validar duplicados u solapamientos
+      const tipos = new Set<string>()
       for (let i = 0; i < secuencias.length; i++) {
         const a = secuencias[i]
+        if (tipos.has(a.tipo_comprobante)) {
+          toast({
+            title: "Error",
+            description: "Ya existe una secuencia para ese tipo de comprobante",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
+        tipos.add(a.tipo_comprobante)
         if (
           a.validacion_inicial?.estado !== "valido" ||
           a.validacion_final?.estado !== "valido"
