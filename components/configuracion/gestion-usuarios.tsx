@@ -188,6 +188,14 @@ export default function GestionUsuarios() {
   }
 
   const handleEdit = (usuario: AuthUser) => {
+    if (usuario.id === currentUser?.id) {
+      toast({
+        title: "Acción no permitida",
+        description: "No puede modificar su propio usuario administrador",
+        variant: "destructive",
+      })
+      return
+    }
     setEditingUser(usuario)
     setNewUser({
       nombre: usuario.nombre,
@@ -408,7 +416,12 @@ export default function GestionUsuarios() {
                   <TableCell>{new Date(usuario.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(usuario)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(usuario)}
+                        disabled={usuario.id === currentUser?.id}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
