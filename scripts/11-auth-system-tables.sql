@@ -26,11 +26,6 @@ CREATE TABLE empresas (
     direccion TEXT,
     provincia VARCHAR(100),
     municipio VARCHAR(100),
-    sector VARCHAR(100),
-    codigo_postal VARCHAR(10),
-    tipo_contribuyente VARCHAR(50) DEFAULT 'Persona Jurídica',
-    regimen_tributario VARCHAR(50) DEFAULT 'Ordinario',
-    actividad_economica VARCHAR(255),
     logo_url TEXT,
     activa BOOLEAN DEFAULT true,
     fecha_registro TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -40,8 +35,6 @@ CREATE TABLE empresas (
     -- Constraints
     CONSTRAINT empresas_rnc_length CHECK (LENGTH(rnc) >= 9),
     CONSTRAINT empresas_email_format CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
-    CONSTRAINT empresas_tipo_contribuyente_valid CHECK (tipo_contribuyente IN ('Persona Física', 'Persona Jurídica')),
-    CONSTRAINT empresas_regimen_tributario_valid CHECK (regimen_tributario IN ('Ordinario', 'RST', 'PST'))
 );
 
 -- Tabla de usuarios del sistema
@@ -291,10 +284,7 @@ INSERT INTO empresas (
     telefono,
     direccion,
     provincia,
-    municipio,
-    tipo_contribuyente,
-    regimen_tributario,
-    actividad_economica
+    municipio
 ) VALUES (
     '101234567',
     'EMPRESA DEMO FACTURACION ELECTRONICA SRL',
@@ -303,10 +293,7 @@ INSERT INTO empresas (
     '809-555-0123',
     'Av. Principal #123, Sector Los Jardines',
     'Distrito Nacional',
-    'Santo Domingo de Guzmán',
-    'Persona Jurídica',
-    'Ordinario',
-    'Desarrollo de software y servicios informáticos'
+    'Santo Domingo de Guzmán'
 ) ON CONFLICT (rnc) DO NOTHING;
 
 -- Insertar usuario administrador demo

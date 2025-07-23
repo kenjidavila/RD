@@ -56,10 +56,7 @@ INSERT INTO configuraciones (tipo, configuracion) VALUES
     "rnc": "",
     "direccion": "",
     "telefono": "",
-    "email": "",
-    "sitio_web": "",
-    "actividad_economica": "",
-    "regimen_tributario": "ORDINARIO"
+    "email": ""
 }')
 ON CONFLICT (tipo) DO NOTHING;
 

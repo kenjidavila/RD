@@ -10,7 +10,6 @@ interface RegistroEmpresaData {
   empresa_direccion?: string
   empresa_provincia?: string
   empresa_municipio?: string
-  empresa_sector?: string
   usuario_nombre: string
   usuario_apellido: string
   usuario_email: string
@@ -160,7 +159,6 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       direccion: data.empresa_direccion || null,
       provincia: data.empresa_provincia || null,
       municipio: data.empresa_municipio || null,
-      sector: data.empresa_sector || null,
       owner_id: data.empresa_rnc,
       activa: true,
       fecha_registro: new Date().toISOString(),

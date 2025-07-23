@@ -44,12 +44,6 @@ export interface Empresa {
   direccion?: string
   provincia?: string
   municipio?: string
-  sector?: string
-  tipo_contribuyente?: string
-  regimen_tributario?: string
-  actividad_economica?: string
-  website?: string
-  observaciones?: string
   activa: boolean
   created_at: string
   updated_at: string

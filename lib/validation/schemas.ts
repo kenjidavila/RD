@@ -10,11 +10,6 @@ export const createEmpresaSchema = z.object({
   direccion: z.string().max(500, "Dirección muy larga").optional(),
   provincia: z.string().max(100, "Provincia muy larga").optional(),
   municipio: z.string().max(100, "Municipio muy largo").optional(),
-  sector: z.string().max(100, "Sector muy largo").optional(),
-  codigo_postal: z.string().max(10, "Código postal muy largo").optional(),
-  tipo_contribuyente: z.string().max(50, "Tipo contribuyente muy largo").optional(),
-  regimen_tributario: z.string().max(50, "Régimen tributario muy largo").optional(),
-  actividad_economica: z.string().max(200, "Actividad económica muy larga").optional(),
 })
 
 export const updateEmpresaSchema = createEmpresaSchema.partial()
