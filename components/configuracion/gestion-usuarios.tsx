@@ -34,6 +34,8 @@ interface NewUser {
 
 export default function GestionUsuarios() {
   const [usuarios, setUsuarios] = useState<AuthUser[]>([])
+  const [page, setPage] = useState(1)
+  const pageSize = 10
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<AuthUser | null>(null)
@@ -48,6 +50,11 @@ export default function GestionUsuarios() {
   const { toast } = useToast()
   const authService = getAuthService()
   const { reportError, reportSuccess } = useConfiguracionTabs()
+
+  const displayedUsers = usuarios.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  )
 
   useEffect(() => {
     const stored = localStorage.getItem("usuarios")
@@ -112,6 +119,29 @@ export default function GestionUsuarios() {
     e.preventDefault()
 
     setProcessing(true)
+
+    if (!newUser.nombre.trim() || !newUser.email.trim() || !newUser.rol) {
+      toast({
+        title: "Campos requeridos",
+        description: "Nombre, email y rol son obligatorios",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      setProcessing(false)
+      return
+    }
+
+    if (editingUser &&
+        newUser.nombre === editingUser.nombre &&
+        newUser.email === editingUser.email &&
+        newUser.rol === editingUser.rol) {
+      toast({
+        title: "Sin cambios",
+        description: "No se realizaron modificaciones",
+      })
+      setProcessing(false)
+      return
+    }
 
     if (!currentUser?.empresa_id) {
       toast({
@@ -441,7 +471,7 @@ export default function GestionUsuarios() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {usuarios.map((usuario) => (
+              {displayedUsers.map((usuario) => (
                 <TableRow key={usuario.id}>
                   <TableCell className="font-medium">{usuario.nombre}</TableCell>
                   <TableCell>{usuario.email}</TableCell>
@@ -479,6 +509,29 @@ export default function GestionUsuarios() {
               ))}
             </TableBody>
           </Table>
+          {usuarios.length > pageSize && (
+            <div className="flex justify-between items-center mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm">
+                Página {page} de {Math.ceil(usuarios.length / pageSize)}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page * pageSize >= usuarios.length}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         )}
       </CardContent>
     </Card>

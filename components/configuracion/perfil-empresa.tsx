@@ -64,10 +64,20 @@ export default function PerfilEmpresa() {
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
   useEffect(() => {
-    DGIICatalogsService.getProvincias().then(setProvincias)
+    DGIICatalogsService.getProvincias()
+      .then(setProvincias)
+      .catch(() => {
+        setError("No se pudieron cargar las provincias")
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las provincias",
+          variant: "destructive",
+        })
+      })
   }, [])
 
   useEffect(() => {
@@ -100,6 +110,7 @@ export default function PerfilEmpresa() {
   const cargarDatosEmpresa = async () => {
     try {
       setLoading(true)
+      setError(null)
 
       const response = await fetch("/api/perfil-empresa")
       if (response.ok) {
@@ -121,9 +132,17 @@ export default function PerfilEmpresa() {
       }
     } catch (error: any) {
       console.error("Error cargando datos de empresa:", error)
+      setError(
+        error instanceof Error
+          ? error.message
+          : "No se pudieron cargar los datos de la empresa",
+      )
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "No se pudieron cargar los datos de la empresa",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudieron cargar los datos de la empresa",
         variant: "destructive",
       })
     } finally {
@@ -267,6 +286,12 @@ export default function PerfilEmpresa() {
         <CardDescription>Configure los datos básicos de su empresa para la facturación electrónica</CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -295,7 +320,9 @@ export default function PerfilEmpresa() {
               <Input
                 id="rnc"
                 value={empresa.rnc}
-                onChange={(e) => handleInputChange("rnc", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("rnc", e.target.value.replace(/\D/g, ""))
+                }
                 required
                 placeholder="123456789"
                 maxLength={11}

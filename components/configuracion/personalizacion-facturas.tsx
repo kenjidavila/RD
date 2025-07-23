@@ -62,6 +62,7 @@ export default function PersonalizacionFacturas() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const { toast } = useToast()
   const router = useRouter()
   const { reportError, reportSuccess } = useConfiguracionTabs()
@@ -195,6 +196,28 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     [field]: value,
   }))
 }
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (!['image/png', 'image/jpeg', 'image/svg+xml'].includes(file.type)) {
+      toast({
+        title: 'Tipo de archivo no soportado',
+        description: 'Solo se permiten imágenes PNG, JPG o SVG',
+        variant: 'destructive',
+      })
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'Archivo muy grande',
+        description: 'El logo no debe exceder 2MB',
+        variant: 'destructive',
+      })
+      return
+    }
+    setLogoPreview(URL.createObjectURL(file))
+  }
 
   const validateFormData = (): string | null => {
     const hexColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
@@ -352,6 +375,15 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
                           <SelectItem value="grande">Grande</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="logo_file">Logo</Label>
+                      <Input
+                        id="logo_file"
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml"
+                        onChange={handleLogoChange}
+                      />
                     </div>
                   </div>
                 </div>
@@ -834,25 +866,47 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   {formData.mostrar_logo && (
-                    <div
-                      className="bg-gray-200 rounded mb-2 flex items-center justify-center text-xs text-gray-500"
-                      style={{
-                        width:
-                          formData.layout_logoTamaño === "grande"
-                            ? "120px"
-                            : formData.layout_logoTamaño === "mediano"
+                    logoPreview ? (
+                      <img
+                        src={logoPreview}
+                        alt="logo"
+                        className="mb-2 object-contain"
+                        style={{
+                          width:
+                            formData.layout_logoTamaño === "grande"
+                              ? "120px"
+                              : formData.layout_logoTamaño === "mediano"
+                                ? "80px"
+                                : "60px",
+                          height:
+                            formData.layout_logoTamaño === "grande"
                               ? "80px"
-                              : "60px",
-                        height:
-                          formData.layout_logoTamaño === "grande"
-                            ? "80px"
-                            : formData.layout_logoTamaño === "mediano"
-                              ? "60px"
-                              : "40px",
-                      }}
-                    >
-                      Logo
-                    </div>
+                              : formData.layout_logoTamaño === "mediano"
+                                ? "60px"
+                                : "40px",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="bg-gray-200 rounded mb-2 flex items-center justify-center text-xs text-gray-500"
+                        style={{
+                          width:
+                            formData.layout_logoTamaño === "grande"
+                              ? "120px"
+                              : formData.layout_logoTamaño === "mediano"
+                                ? "80px"
+                                : "60px",
+                          height:
+                            formData.layout_logoTamaño === "grande"
+                              ? "80px"
+                              : formData.layout_logoTamaño === "mediano"
+                                ? "60px"
+                                : "40px",
+                        }}
+                      >
+                        Logo
+                      </div>
+                    )
                   )}
                   <h1
                     className="font-bold"
