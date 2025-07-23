@@ -240,6 +240,15 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     if (numericFields.some((n) => Number.isNaN(n) || n < 0)) {
       return "Existen valores numéricos inválidos en la configuración"
     }
+    if (formData.marca_agua_texto.length > 50) {
+      return "El texto de la marca de agua es muy largo"
+    }
+    if (
+      formData.color_primario.toLowerCase() === "#ffffff" &&
+      formData.color_secundario.toLowerCase() === "#ffffff"
+    ) {
+      return "Los colores no pueden ser ambos blancos"
+    }
     return null
   }
 

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react"
+import { DigitalSignatureService } from "@/lib/digital-signature"
 import { createClient } from "@/lib/supabase"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
@@ -23,6 +24,8 @@ export default function CertificadosDigitales() {
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -69,11 +72,9 @@ export default function CertificadosDigitales() {
     }
   }
 
-  const subirCertificado = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const subirCertificado = async () => {
     if (uploading) return
-    const file = event.target.files && event.target.files[0]
+    const file = selectedFile
     if (!file) {
       toast({
         title: "Archivo requerido",
@@ -119,6 +120,26 @@ export default function CertificadosDigitales() {
     try {
       setUploading(true)
       setError(null)
+      if ([".pfx", ".p12"].includes(fileExtension)) {
+        if (!password) {
+          toast({
+            title: "Contraseña requerida",
+            description: "Ingrese la contraseña del archivo PFX/P12",
+            variant: "destructive",
+          })
+          return
+        }
+        try {
+          await DigitalSignatureService.parsePfx(await file.arrayBuffer(), password)
+        } catch (err) {
+          toast({
+            title: "Contraseña inválida",
+            description: "La contraseña no coincide con el certificado",
+            variant: "destructive",
+          })
+          return
+        }
+      }
 
       if (certificados.some((c) => c.nombre === file.name)) {
         const msg = "Ya existe un certificado con el mismo nombre"
@@ -157,23 +178,45 @@ export default function CertificadosDigitales() {
       if (urlError || !publicUrl) throw urlError || new Error("No se pudo obtener URL pública")
 
       // Guardar información del certificado en la base de datos
-      const { error: dbError } = await supabase.from("certificados_digitales").insert({
-        empresa_id: empresaId,
-        nombre: file.name,
-        archivo_url: publicUrl,
-        fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 año por defecto
-        activo: true,
-      })
+      const { data: inserted, error: dbError } = await supabase
+        .from("certificados_digitales")
+        .insert({
+          empresa_id: empresaId,
+          nombre: file.name,
+          archivo_url: publicUrl,
+          fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+          activo: true,
+        })
+        .select()
+        .single()
 
-      if (dbError) throw dbError
+      if (dbError || !inserted) throw dbError
+
+      await supabase
+        .from("configuraciones")
+        .upsert(
+          {
+            empresa_id: empresaId,
+            tipo: "certificados",
+            configuracion: {
+              certificado_activo: inserted.id,
+              password_certificado: password,
+              fecha_vencimiento: inserted.fecha_vencimiento,
+              configurado: true,
+            },
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "empresa_id,tipo" },
+        )
 
       setSuccess("Certificado digital subido exitosamente")
       toast({ title: "Éxito", description: "Certificado digital subido exitosamente" })
       reportSuccess("certificados")
       await cargarCertificados()
 
-      // Limpiar input
-      event.target.value = ""
+      // Limpiar estados
+      setSelectedFile(null)
+      setPassword("")
 
       logger.info("Certificado digital subido", { empresaId, fileName })
     } catch (error) {
@@ -307,16 +350,25 @@ export default function CertificadosDigitales() {
         {/* Subir nuevo certificado */}
         <div className="space-y-4">
           <Label htmlFor="certificado-upload">Subir Nuevo Certificado</Label>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-2 md:space-y-0">
             <Input
               id="certificado-upload"
               type="file"
               accept=".p12,.pfx,.pem,.crt,.cer,.key,.txt"
-              onChange={subirCertificado}
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
               disabled={uploading}
               className="flex-1"
             />
-            <Button disabled={uploading}>
+            {selectedFile && [".pfx", ".p12"].includes(selectedFile.name.toLowerCase().substring(selectedFile.name.lastIndexOf("."))) && (
+              <Input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="flex-1"
+              />
+            )}
+            <Button onClick={subirCertificado} disabled={uploading || !selectedFile}>
               <Upload className="h-4 w-4 mr-2" />
               {uploading ? "Subiendo..." : "Subir"}
             </Button>

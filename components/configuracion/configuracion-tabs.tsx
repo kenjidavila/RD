@@ -2,21 +2,25 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Check } from "lucide-react"
 
 function TabTriggerWithError({
   value,
   children,
 }: {
-  value: string
+  value: ConfigTabKey
   children: React.ReactNode
 }) {
-  const { errors } = useConfiguracionTabs()
+  const { errors, successes } = useConfiguracionTabs()
   return (
     <TabsTrigger
       value={value}
       className={errors[value] ? "text-red-600" : undefined}
     >
       {children}
+      {successes[value] && !errors[value] && (
+        <Check className="h-4 w-4 text-green-600 ml-1" />
+      )}
       {errors[value] && <Badge variant="destructive" className="ml-2">!</Badge>}
     </TabsTrigger>
   )
@@ -30,11 +34,24 @@ import PersonalizacionFacturas from "./personalizacion-facturas"
 import {
   ConfiguracionTabsProvider,
   useConfiguracionTabs,
+  type ConfigTabKey,
 } from "./configuracion-tabs-context"
-import { useState } from "react"
+import ResumenConfiguracion from "./resumen-configuracion"
+import { useState, useEffect } from "react"
 
 export default function ConfiguracionTabs() {
   const [currentTab, setCurrentTab] = useState("perfil")
+
+  useEffect(() => {
+    const stored = localStorage.getItem("config_current_tab")
+    if (stored) {
+      setCurrentTab(stored)
+    }
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem("config_current_tab", currentTab)
+  }, [currentTab])
 
   const handleError = (tab: string) => {
     setCurrentTab(tab)
@@ -58,13 +75,14 @@ export default function ConfiguracionTabs() {
         onValueChange={setCurrentTab}
         className="space-y-6"
       >
-      <TabsList className="grid w-full grid-cols-6">
+      <TabsList className="grid w-full grid-cols-7">
         <TabTriggerWithError value="perfil">Perfil Empresa</TabTriggerWithError>
         <TabTriggerWithError value="certificados">Certificados</TabTriggerWithError>
         <TabTriggerWithError value="usuarios">Usuarios</TabTriggerWithError>
         <TabTriggerWithError value="secuencias">Secuencias NCF</TabTriggerWithError>
         <TabTriggerWithError value="contingencia">Contingencia</TabTriggerWithError>
         <TabTriggerWithError value="personalizacion">Personalización</TabTriggerWithError>
+        <TabTriggerWithError value="resumen">Resumen</TabTriggerWithError>
       </TabsList>
 
       <TabsContent value="perfil" className="space-y-4">
@@ -89,6 +107,10 @@ export default function ConfiguracionTabs() {
 
       <TabsContent value="personalizacion" className="space-y-4">
         <PersonalizacionFacturas />
+      </TabsContent>
+
+      <TabsContent value="resumen" className="space-y-4">
+        <ResumenConfiguracion />
       </TabsContent>
     </Tabs>
     </ConfiguracionTabsProvider>

@@ -55,7 +55,34 @@ export default function SecuenciasNCF() {
   useEffect(() => {
     cargarSecuencias()
     fetchEmpresa()
+    const stored = localStorage.getItem("secuencias_ncf")
+    if (stored) {
+      try {
+        setSecuencias(JSON.parse(stored))
+      } catch {
+        /* ignore */
+      }
+    }
   }, [])
+
+  useEffect(() => {
+    if (!empresaRnc) return
+    setSecuencias((prev) =>
+      prev.map((s) => ({
+        ...s,
+        validacion_inicial: s.validacion_inicial
+          ? { ...s.validacion_inicial, estado: "pendiente", mensaje: "Pendiente de validación" }
+          : undefined,
+        validacion_final: s.validacion_final
+          ? { ...s.validacion_final, estado: "pendiente", mensaje: "Pendiente de validación" }
+          : undefined,
+      })),
+    )
+  }, [empresaRnc])
+
+  useEffect(() => {
+    localStorage.setItem("secuencias_ncf", JSON.stringify(secuencias))
+  }, [secuencias])
 
   const fetchEmpresa = async () => {
     try {
@@ -274,6 +301,16 @@ export default function SecuenciasNCF() {
           setSaving(false)
           return
         }
+        if (!a.fecha_vencimiento) {
+          toast({
+            title: "Fecha requerida",
+            description: "Cada secuencia debe tener fecha de vencimiento",
+            variant: "destructive",
+          })
+          reportError("secuencias")
+          setSaving(false)
+          return
+        }
         if (secuencias.findIndex((s, idx) => s.tipo_comprobante === a.tipo_comprobante && idx !== i) !== -1) {
           toast({
             title: "Error",
@@ -355,6 +392,7 @@ export default function SecuenciasNCF() {
         })
         reportSuccess("secuencias")
         cargarSecuencias()
+        localStorage.setItem("secuencias_ncf_saved", "true")
       } else {
         throw new Error("Error al guardar")
       }
