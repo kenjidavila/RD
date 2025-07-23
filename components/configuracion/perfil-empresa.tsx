@@ -311,7 +311,15 @@ export default function PerfilEmpresa() {
                 onValueChange={(value) => {
                   setProvinciaCodigo(value)
                   const prov = provincias.find((p) => p.codigo === value)
-                  handleInputChange("provincia", prov?.nombre || "")
+                  if (prov) {
+                    handleInputChange("provincia", prov.nombre)
+                  } else {
+                    toast({
+                      title: "Error",
+                      description: "Código de provincia no válido",
+                      variant: "destructive",
+                    })
+                  }
                 }}
               >
                 <SelectTrigger>
