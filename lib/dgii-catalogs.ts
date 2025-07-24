@@ -1,5 +1,6 @@
 import { supabase } from "./supabase"
 import provinciasFallback from "@/public/data/provincias.json"
+import municipiosFallback from "@/public/data/municipios.json"
 
 export interface Provincia {
   codigo: string
@@ -71,14 +72,20 @@ export class DGIICatalogsService {
 
   // Municipios
   static async getMunicipios(): Promise<Municipio[]> {
-    const { data, error } = await supabase.from("municipios").select("*").eq("activa", true).order("nombre")
+    const { data, error } = await supabase
+      .from("municipios")
+      .select("*")
+      .eq("activa", true)
+      .order("nombre")
 
-    if (error) {
-      console.error("Error fetching municipios:", error)
-      return []
+    if (error || !data || data.length === 0) {
+      if (error) {
+        console.error("Error fetching municipios:", error)
+      }
+      return municipiosFallback as Municipio[]
     }
 
-    return data || []
+    return data
   }
 
   static async getMunicipiosByProvincia(provinciaCodigo: string): Promise<Municipio[]> {
@@ -89,12 +96,16 @@ export class DGIICatalogsService {
       .eq("activa", true)
       .order("nombre")
 
-    if (error) {
-      console.error("Error fetching municipios by provincia:", error)
-      return []
+    if (error || !data || data.length === 0) {
+      if (error) {
+        console.error("Error fetching municipios by provincia:", error)
+      }
+      return (municipiosFallback as Municipio[]).filter(
+        (m) => m.provincia_codigo === provinciaCodigo,
+      )
     }
 
-    return data || []
+    return data
   }
 
   static async getMunicipioByCode(codigo: string): Promise<Municipio | null> {
@@ -105,9 +116,14 @@ export class DGIICatalogsService {
       .eq("activa", true)
       .single()
 
-    if (error) {
-      console.error("Error fetching municipio:", error)
-      return null
+    if (error || !data) {
+      if (error) {
+        console.error("Error fetching municipio:", error)
+      }
+      return (
+        (municipiosFallback as Municipio[]).find((m) => m.codigo === codigo) ||
+        null
+      )
     }
 
     return data
