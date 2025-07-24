@@ -48,6 +48,7 @@ export default function GestionUsuarios() {
   })
   const [saving, setSaving] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const supabase = createClient()
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const { toast } = useToast()
   const authService = getAuthService()
@@ -148,7 +149,8 @@ export default function GestionUsuarios() {
       return false
     }
 
-    if (!empresaId) {
+    const empresaRef = empresaId || currentUser?.empresa_id
+    if (!empresaRef) {
       toast({
         title: "Empresa no identificada",
         description: "No se pudo identificar la empresa",
@@ -182,10 +184,29 @@ export default function GestionUsuarios() {
       return;
     }
 
-    // Validar duplicidad de email en backend
+    const empresaRef = empresaId || currentUser?.empresa_id
+
+    // Validar duplicidad de email localmente
+    if (
+      usuarios.some(
+        (u) =>
+          u.email.toLowerCase() === newUser.email.toLowerCase() &&
+          (!editingUser || u.id !== editingUser.id),
+      )
+    ) {
+      toast({
+        title: "Error",
+        description: "Ya existe un usuario con ese correo electrónico",
+        variant: "destructive",
+      })
+      reportError("usuarios")
+      setSaving(false)
+      return
+    }
+
+    // Validar duplicidad de email en Supabase
     try {
-      const client = createClient()
-      const { data: existing } = await client
+      const { data: existing } = await supabase
         .from("usuarios")
         .select("id")
         .eq("email", newUser.email)
@@ -219,7 +240,7 @@ export default function GestionUsuarios() {
       return
     }
 
-    if (!currentUser?.empresa_id) {
+    if (!empresaRef) {
       toast({
         title: "Error",
         description: "No se pudo identificar la empresa",
@@ -257,6 +278,7 @@ export default function GestionUsuarios() {
           nombre: newUser.nombre,
           email: newUser.email,
           rol: newUser.rol,
+          empresa_id: empresaRef,
         })
 
         if (result.success) {
@@ -273,27 +295,11 @@ export default function GestionUsuarios() {
           throw new Error(result.error)
         }
       } else {
-        // Validar email duplicado
-        if (
-          usuarios.some(
-            (u) => u.email.toLowerCase() === newUser.email.toLowerCase(),
-          )
-        ) {
-          toast({
-            title: "Error",
-            description: "Ya existe un usuario con ese correo electrónico",
-            variant: "destructive",
-          })
-          reportError("usuarios")
-          setSaving(false)
-          return
-        }
-
         // Crear nuevo usuario
         const result = await authService.signUp(newUser.email, newUser.password, {
           nombre: newUser.nombre,
           rol: newUser.rol,
-          empresa_id: currentUser.empresa_id,
+          empresa_id: empresaRef,
         })
 
         if (result.success) {
