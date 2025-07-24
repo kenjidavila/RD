@@ -168,16 +168,6 @@ export default function PerfilEmpresa() {
   const validateFields = () => {
     const { razon_social, rnc, telefono, email, municipio, direccion } = empresa
 
-    if (!empresaId) {
-      toast({
-        title: "Empresa no identificada",
-        description: "No se encontró la empresa para actualizar",
-        variant: "destructive",
-      })
-      reportError("perfil")
-      return false
-    }
-
     if (
       !razon_social.trim() ||
       !rnc.trim() ||
