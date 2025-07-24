@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server"
 import { createHash, pbkdf2Sync, randomBytes } from "crypto"
+import { authLogger } from "./logger"
 
 interface RegistroEmpresaData {
   empresa_rnc: string
@@ -92,9 +93,9 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
   const supabase = createClient()
 
   try {
-    console.log("🔄 Iniciando registro de empresa...")
-    console.log("📧 Email:", data.usuario_email)
-    console.log("🏢 RNC Empresa:", data.empresa_rnc)
+    authLogger.info("🔄 Iniciando registro de empresa...")
+    authLogger.debug("📧 Email:", { email: data.usuario_email })
+    authLogger.debug("🏢 RNC Empresa:", { rnc: data.empresa_rnc })
 
     // 1. Verificar que no exista empresa con el mismo RNC
     const { data: empresaExistente, error: errorVerificacion } = await supabase
@@ -104,7 +105,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       .single()
 
     if (empresaExistente && !errorVerificacion) {
-      console.log("❌ Empresa ya existe con RNC:", data.empresa_rnc)
+      authLogger.warn(`Empresa ya existe con RNC: ${data.empresa_rnc}`)
       return {
         success: false,
         message: "Ya existe una empresa registrada con este RNC",
@@ -113,7 +114,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
     }
 
     // 2. Crear usuario en Supabase Auth
-    console.log("🔐 Creando usuario en Supabase Auth...")
+    authLogger.info("🔐 Creando usuario en Supabase Auth...")
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.usuario_email,
       password: data.usuario_password,
@@ -128,7 +129,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
     })
 
     if (authError) {
-      console.error("❌ Error en Supabase Auth:", authError)
+      authLogger.error("Error en Supabase Auth", authError)
       return {
         success: false,
         message: "Error al crear usuario",
@@ -137,7 +138,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
     }
 
     if (!authData.user) {
-      console.error("❌ No se pudo crear el usuario")
+      authLogger.error("No se pudo crear el usuario")
       return {
         success: false,
         message: "Error al crear usuario",
@@ -145,10 +146,10 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       }
     }
 
-    console.log("✅ Usuario creado en Auth:", authData.user.id)
+    authLogger.info(`Usuario creado en Auth: ${authData.user.id}`)
 
     // 3. Crear empresa con owner_id (CLAVE: esto resuelve el problema RLS)
-    console.log("🏢 Creando empresa con owner_id:", authData.user.id)
+    authLogger.info(`Creando empresa con owner_id: ${authData.user.id}`)
 
     const empresaData = {
       rnc: data.empresa_rnc,
@@ -165,7 +166,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       fecha_actualizacion: new Date().toISOString(),
     }
 
-    console.log("📝 Datos de empresa a insertar:", {
+    authLogger.debug("Datos de empresa a insertar", {
       rnc: empresaData.rnc,
       razon_social: empresaData.razon_social,
       owner_id: empresaData.owner_id,
@@ -185,8 +186,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       .single()
 
     if (empresaError) {
-      console.error("❌ Error al crear empresa:", empresaError)
-      console.error("📋 Detalles del error:", {
+      authLogger.error("Error al crear empresa", {
         message: empresaError.message,
         details: empresaError.details,
         hint: empresaError.hint,
@@ -196,9 +196,9 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       // Limpiar usuario de Auth si falla la empresa
       try {
         await supabase.auth.admin.deleteUser(authData.user.id)
-        console.log("🧹 Usuario limpiado de Auth")
+        authLogger.warn("Usuario limpiado de Auth")
       } catch (cleanupError) {
-        console.error("⚠️ Error al limpiar usuario:", cleanupError)
+        authLogger.error("Error al limpiar usuario", cleanupError)
       }
 
       return {
@@ -208,10 +208,10 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       }
     }
 
-    console.log("✅ Empresa creada:", empresaCreada.id)
+    authLogger.info(`Empresa creada: ${empresaCreada.id}`)
 
     // 4. Crear registro en tabla usuarios (para datos adicionales)
-    console.log("👤 Creando registro de usuario...")
+    authLogger.info("Creando registro de usuario...")
 
     const usuarioData = {
       empresa_id: empresaCreada.id,
@@ -236,15 +236,15 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       .single()
 
     if (usuarioError) {
-      console.error("❌ Error al crear usuario en tabla:", usuarioError)
+      authLogger.error("Error al crear usuario en tabla", usuarioError)
 
       // Limpiar empresa y usuario de Auth si falla
       try {
         await supabaseAuth.from("empresas").delete().eq("id", empresaCreada.id)
         await supabase.auth.admin.deleteUser(authData.user.id)
-        console.log("🧹 Datos limpiados después del error")
+        authLogger.warn("Datos limpiados después del error")
       } catch (cleanupError) {
-        console.error("⚠️ Error al limpiar datos:", cleanupError)
+        authLogger.error("Error al limpiar datos", cleanupError)
       }
 
       return {
@@ -254,8 +254,8 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       }
     }
 
-    console.log("✅ Usuario creado en tabla:", usuarioCreado.id)
-    console.log("🎉 Registro completado exitosamente")
+    authLogger.info(`Usuario creado en tabla: ${usuarioCreado.id}`)
+    authLogger.info("Registro completado exitosamente")
 
     return {
       success: true,
@@ -266,7 +266,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       },
     }
   } catch (error) {
-    console.error("💥 Error inesperado en registro:", error)
+    authLogger.error("Error inesperado en registro", error)
     return {
       success: false,
       message: "Error interno del servidor",
@@ -280,7 +280,7 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
   const supabase = createClient()
 
   try {
-    console.log("🔐 Iniciando sesión para:", data.email)
+    authLogger.info(`Iniciando sesión para: ${data.email}`)
 
     // Validar formato de datos
     if (!data.email || !data.password) {
@@ -301,10 +301,9 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
       }
     }
 
-    console.log("📧 Enviando credenciales a Supabase Auth...")
-    console.log("📋 Datos enviados:", {
+    authLogger.debug("Enviando credenciales a Supabase Auth", {
       email: data.email,
-      password: "***" + data.password.slice(-2), // Solo mostrar últimos 2 caracteres
+      password: "***" + data.password.slice(-2),
     })
 
     const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -313,7 +312,7 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
     })
 
     if (error) {
-      console.error("❌ Error de autenticación:", error)
+      authLogger.error("Error de autenticación", error)
       return {
         success: false,
         message: "Credenciales inválidas",
@@ -322,7 +321,7 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
     }
 
     if (!authData.user || !authData.session) {
-      console.error("❌ No se recibieron datos de usuario o sesión")
+      authLogger.error("No se recibieron datos de usuario o sesión")
       return {
         success: false,
         message: "Error en la autenticación",
@@ -330,7 +329,7 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
       }
     }
 
-    console.log("✅ Autenticación exitosa para usuario:", authData.user.id)
+    authLogger.info(`Autenticación exitosa para usuario: ${authData.user.id}`)
 
     return {
       success: true,
@@ -341,7 +340,7 @@ export async function iniciarSesion(data: LoginData): Promise<LoginResult> {
       },
     }
   } catch (error) {
-    console.error("💥 Error inesperado en inicio de sesión:", error)
+    authLogger.error("Error inesperado en inicio de sesión", error)
     return {
       success: false,
       message: "Error interno del servidor",
@@ -355,7 +354,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
   const supabase = createClient()
 
   try {
-    console.log("🔍 Verificando sesión...")
+    authLogger.debug("Verificando sesión...")
 
     const {
       data: { user },
@@ -363,7 +362,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
     } = await supabase.auth.getUser()
 
     if (error || !user) {
-      console.log("❌ Sesión inválida o expirada")
+      authLogger.warn("Sesión inválida o expirada")
       return {
         success: false,
         message: "Sesión inválida o expirada",
@@ -371,7 +370,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
       }
     }
 
-    console.log("👤 Usuario autenticado:", user.id)
+    authLogger.debug(`Usuario autenticado: ${user.id}`)
 
     // Obtener datos completos del usuario y empresa
     const { data: datosCompletos, error: errorDatos } = await supabase
@@ -380,7 +379,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
       .single()
 
     if (errorDatos) {
-      console.error("⚠️ Error al obtener datos completos:", errorDatos)
+      authLogger.error("Error al obtener datos completos", errorDatos)
 
       // Fallback: usar datos básicos del usuario
       return {
@@ -397,7 +396,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
       }
     }
 
-    console.log("✅ Datos completos obtenidos")
+    authLogger.info("Datos completos obtenidos")
 
     return {
       success: true,
@@ -420,7 +419,7 @@ export async function verificarSesion(token?: string): Promise<VerificarSesionRe
       usuario: datosCompletos,
     }
   } catch (error) {
-    console.error("💥 Error al verificar sesión:", error)
+    authLogger.error("Error al verificar sesión", error)
     return {
       success: false,
       message: error instanceof Error ? error.message : "Error al verificar sesión",
@@ -434,12 +433,12 @@ export async function cerrarSesion() {
   const supabase = createClient()
 
   try {
-    console.log("🚪 Cerrando sesión...")
+    authLogger.info("Cerrando sesión...")
 
     const { error } = await supabase.auth.signOut()
 
     if (error) {
-      console.error("❌ Error al cerrar sesión:", error)
+      authLogger.error("Error al cerrar sesión", error)
       return {
         success: false,
         message: "Error al cerrar sesión",
@@ -447,14 +446,14 @@ export async function cerrarSesion() {
       }
     }
 
-    console.log("✅ Sesión cerrada exitosamente")
+    authLogger.info("Sesión cerrada exitosamente")
 
     return {
       success: true,
       message: "Sesión cerrada exitosamente",
     }
   } catch (error) {
-    console.error("💥 Error al cerrar sesión:", error)
+    authLogger.error("Error al cerrar sesión", error)
     return {
       success: false,
       message: "Error interno del servidor",
@@ -484,7 +483,7 @@ export async function obtenerUsuarioActual() {
       .single()
 
     if (errorDatos) {
-      console.error("Error al obtener datos completos:", errorDatos)
+      authLogger.error("Error al obtener datos completos", errorDatos)
       return {
         id: user.id,
         email: user.email,
@@ -499,7 +498,7 @@ export async function obtenerUsuarioActual() {
       ...datosCompletos,
     }
   } catch (error) {
-    console.error("Error al obtener usuario actual:", error)
+    authLogger.error("Error al obtener usuario actual", error)
     return null
   }
 }
@@ -542,7 +541,7 @@ export async function obtenerSesionesActivas(usuarioId?: number | string) {
       sesiones: [sesionActual],
     }
   } catch (error) {
-    console.error("Error en obtenerSesionesActivas:", error)
+    authLogger.error("Error en obtenerSesionesActivas", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error al obtener sesiones activas",
@@ -570,7 +569,7 @@ export async function cerrarSesionEspecifica(sesionId: number | string, usuarioI
       message: "Sesión cerrada exitosamente",
     }
   } catch (error) {
-    console.error("Error en cerrarSesionEspecifica:", error)
+    authLogger.error("Error en cerrarSesionEspecifica", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Error al cerrar sesión específica",
@@ -591,7 +590,7 @@ async function registrarIntentoFallido(email: string, ip_address?: string, tipo_
       fecha: new Date().toISOString(),
     })
   } catch (error) {
-    console.error("Error al registrar intento fallido:", error)
+    authLogger.error("Error al registrar intento fallido", error)
   }
 }
 

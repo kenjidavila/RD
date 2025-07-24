@@ -1,4 +1,7 @@
 import { createServerClient } from "./supabase"
+import { createLogger } from "./logger"
+
+const backupLogger = createLogger("backup")
 
 export class BackupService {
   static async crearBackupCompleto(userId: string) {
@@ -49,13 +52,13 @@ export class BackupService {
           const { data, error } = await supabase.from(table).select("*").eq("empresa_id", empresaId)
 
           if (error) {
-            console.warn(`Error getting data from ${table}:`, error)
+            backupLogger.warn(`Error getting data from ${table}`, error)
             backupData[table] = []
           } else {
             backupData[table] = data || []
           }
         } catch (error) {
-          console.warn(`Error processing table ${table}:`, error)
+          backupLogger.warn(`Error processing table ${table}`, error)
           backupData[table] = []
         }
       }
@@ -82,7 +85,7 @@ export class BackupService {
         backup,
       }
     } catch (error) {
-      console.error("Error creating backup:", error)
+      backupLogger.error("Error creating backup", error)
       return {
         success: false,
         error: "Error interno del servidor",
@@ -119,7 +122,7 @@ export class BackupService {
         backups: logs || [],
       }
     } catch (error) {
-      console.error("Error listing backups:", error)
+      backupLogger.error("Error listing backups", error)
       return {
         success: false,
         error: "Error interno del servidor",
