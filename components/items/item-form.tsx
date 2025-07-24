@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -102,15 +103,10 @@ export default function ItemForm({ item, onClose }: ItemFormProps) {
 
   useEffect(() => {
     const checkEmpresa = async () => {
-      try {
-        const res = await fetch("/api/empresa")
-        if (res.ok) {
-          setEmpresaOk(true)
-        } else {
-          setEmpresaOk(false)
-          router.push("/perfil-empresa")
-        }
-      } catch {
+      const empresa = await fetchEmpresaConfig()
+      if (empresa) {
+        setEmpresaOk(true)
+      } else {
         setEmpresaOk(false)
         router.push("/perfil-empresa")
       }

@@ -1,5 +1,6 @@
 "use client"
 import React, { createContext, useContext, useEffect, useState } from "react"
+import { useEmpresaConfig } from "@/hooks/use-empresa-config"
 
 export interface EmpresaProfile {
   id?: string
@@ -26,84 +27,36 @@ interface EmpresaContextValue {
 const EmpresaContext = createContext<EmpresaContextValue | undefined>(undefined)
 
 export function EmpresaProvider({ children }: { children: React.ReactNode }) {
+  const { empresa } = useEmpresaConfig()
   const [empresaId, setEmpresaIdState] = useState<string | null>(null)
-  const [empresa, setEmpresaState] = useState<EmpresaProfile | null>(null)
 
-  const setEmpresaId = (id: string | null) => {
-    setEmpresaIdState(id)
-    try {
-      const stored = localStorage.getItem("empresa_profile")
-      if (stored) {
-        const data = JSON.parse(stored)
-        data.id = id
-        localStorage.setItem("empresa_profile", JSON.stringify(data))
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const setEmpresa = (emp: EmpresaProfile | null) => {
-    setEmpresaState(emp)
-    try {
-      if (emp) {
-        localStorage.setItem("empresa_profile", JSON.stringify(emp))
-      } else {
-        localStorage.removeItem("empresa_profile")
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-
-  // Mantener sincronizado el RNC de la empresa en los datos de usuario
   useEffect(() => {
-    if (!empresa) return
-    try {
-      const stored = localStorage.getItem("user_data")
-      if (stored) {
-        const data = JSON.parse(stored)
-        if (empresa.rnc && data.rncEmpresa !== empresa.rnc) {
-          data.rncEmpresa = empresa.rnc
-          localStorage.setItem("user_data", JSON.stringify(data))
-          window.dispatchEvent(new Event("userDataUpdated"))
-        }
-      }
-    } catch (err) {
-      console.error("Error actualizando datos de usuario:", err)
+    if (empresa) {
+      setEmpresaIdState(empresa.id || null)
     }
   }, [empresa])
 
-  useEffect(() => {
-    const loadEmpresa = async () => {
-      try {
-        const stored = localStorage.getItem("empresa_profile")
-        if (stored) {
-          const data = JSON.parse(stored)
-          setEmpresaIdState(data?.id || null)
-          setEmpresaState(data)
-        }
-      } catch {
-        /* ignore */
-      }
+  const setEmpresaId = (id: string | null) => {
+    setEmpresaIdState(id)
+  }
 
-      try {
-        const res = await fetch("/api/empresa")
-        if (res.ok) {
-          const result = await res.json()
-          setEmpresaId(result.data?.id ?? null)
-          setEmpresa(result.data ?? null)
-        }
-      } catch (err) {
-        console.error("Error cargando empresa", err)
-      }
+  const [empresaState, setEmpresaState] = useState<EmpresaProfile | null>(null)
+
+  const setEmpresa = (emp: EmpresaProfile | null) => {
+    setEmpresaState(emp)
+  }
+
+
+
+  useEffect(() => {
+    if (empresa) {
+      setEmpresaState(empresa)
     }
-    loadEmpresa()
-  }, [])
+  }, [empresa])
 
   return (
     <EmpresaContext.Provider
-      value={{ empresaId, setEmpresaId, empresa, setEmpresa }}
+      value={{ empresaId, setEmpresaId, empresa: empresaState, setEmpresa }}
     >
       {children}
     </EmpresaContext.Provider>

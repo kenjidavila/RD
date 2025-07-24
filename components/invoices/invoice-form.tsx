@@ -12,6 +12,7 @@ import { Plus, Trash2, Eye, FileText, Save, Send, AlertCircle, Loader2 } from "l
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@/utils/supabase/client"
+import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
 import { ClienteSelector } from "./cliente-selector"
 import { RNCLookup } from "./rnc-lookup"
 import { NCFLookup } from "./ncf-lookup"
@@ -160,34 +161,16 @@ export default function InvoiceForm({ initialData, onSave, onEmit }: InvoiceForm
     try {
       setLoadingEmpresa(true)
 
-      const response = await fetch("/api/empresa")
+      const empresa = await fetchEmpresaConfig()
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          toast({
-            title: "Empresa no configurada",
-            description: "Por favor configure los datos de su empresa en Configuración > Perfil de Empresa",
-            variant: "destructive",
-          })
-        } else if (response.status === 401) {
-          toast({
-            title: "Error de autenticación",
-            description: "Debe iniciar sesión para acceder a esta función",
-            variant: "destructive",
-          })
-        } else {
-          const errorData = await response.json()
-          toast({
-            title: "Error",
-            description: errorData.error || "Error al cargar los datos de la empresa",
-            variant: "destructive",
-          })
-        }
+      if (!empresa) {
+        toast({
+          title: "Empresa no configurada",
+          description: "Por favor configure los datos de su empresa en Configuración > Perfil de Empresa",
+          variant: "destructive",
+        })
         return
       }
-
-      const result = await response.json()
-      const empresa = result.data
 
       if (empresa) {
         const empresaFormatted: EmpresaData = {

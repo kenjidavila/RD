@@ -159,7 +159,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       direccion: data.empresa_direccion || null,
       provincia: data.empresa_provincia || null,
       municipio: data.empresa_municipio || null,
-      owner_id: data.empresa_rnc,
+      owner_id: authData.user.id,
       activa: true,
       fecha_registro: new Date().toISOString(),
       fecha_actualizacion: new Date().toISOString(),
@@ -180,7 +180,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
 
     const { data: empresaCreada, error: empresaError } = await supabaseAuth
       .from("empresas")
-      .insert(empresaData)
+      .upsert(empresaData, { onConflict: ["owner_id"] })
       .select()
       .single()
 

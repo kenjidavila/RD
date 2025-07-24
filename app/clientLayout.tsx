@@ -7,6 +7,7 @@ import Sidebar from "@/components/layout/sidebar"
 import Header from "@/components/layout/header"
 import MobileNavigation from "@/components/layout/mobile-navigation"
 import { createClient } from "@/utils/supabase/client"
+import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
 
 interface UserData {
   id: string
@@ -47,8 +48,8 @@ export default function ClientLayout({
 
           // Verificar que el usuario tenga empresa asociada
           try {
-            const empresaRes = await fetch("/api/empresa")
-            if (empresaRes.status === 404 && pathname !== "/perfil-empresa") {
+            const empresa = await fetchEmpresaConfig()
+            if (!empresa && pathname !== "/perfil-empresa") {
               router.push("/perfil-empresa")
               return
             }

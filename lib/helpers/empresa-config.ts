@@ -1,0 +1,47 @@
+import { createClient } from "@/utils/supabase/client"
+import type { Database } from "@/types/database"
+
+export type EmpresaConfig = Database["public"]["Tables"]["empresas"]["Row"]
+
+export async function fetchEmpresaConfig(): Promise<EmpresaConfig | null> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from("empresas")
+    .select("*")
+    .eq("owner_id", user.id)
+    .maybeSingle()
+
+  if (error) {
+    console.error("Error fetching empresa config", error)
+    return null
+  }
+
+  return data
+}
+
+export async function upsertEmpresaConfig(
+  empresa: Omit<EmpresaConfig, "id" | "owner_id" | "created_at" | "updated_at">,
+): Promise<EmpresaConfig | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Usuario no autenticado")
+
+  const { data, error } = await supabase
+    .from("empresas")
+    .upsert(
+      { ...empresa, owner_id: user.id, updated_at: new Date().toISOString() },
+      { onConflict: ["owner_id"] },
+    )
+    .select()
+    .single()
+
+  if (error) {
+    console.error("Error upserting empresa", error)
+    throw new Error(error.message)
+  }
+
+  return data
+}
