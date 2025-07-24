@@ -1,4 +1,5 @@
 import { supabase } from "./supabase"
+import provinciasFallback from "@/public/data/provincias.json"
 
 export interface Provincia {
   codigo: string
@@ -35,14 +36,21 @@ export interface TipoMoneda {
 export class DGIICatalogsService {
   // Provincias
   static async getProvincias(): Promise<Provincia[]> {
-    const { data, error } = await supabase.from("provincias").select("*").eq("activa", true).order("nombre")
+    const { data, error } = await supabase
+      .from("provincias")
+      .select("*")
+      .eq("activa", true)
+      .order("nombre")
 
-    if (error) {
-      console.error("Error fetching provincias:", error)
-      return []
+    if (error || !data || data.length === 0) {
+      if (error) {
+        console.error("Error fetching provincias:", error)
+      }
+      // Fallback a datos estáticos cuando la consulta falla o no retorna datos
+      return provinciasFallback as Provincia[]
     }
 
-    return data || []
+    return data
   }
 
   static async getProvinciaByCode(codigo: string): Promise<Provincia | null> {
