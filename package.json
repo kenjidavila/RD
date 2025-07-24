@@ -21,6 +21,7 @@
   "scripts": {
     "build": "next build",
     "db:generate": "supabase gen types typescript --project-id your-project-id --schema public > types/database.ts",
+    "db:migrate": "sh scripts/run-migrations.sh",
     "db:reset": "supabase db reset",
     "db:seed": "supabase db seed",
     "dev": "next dev",

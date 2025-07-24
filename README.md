@@ -106,7 +106,7 @@ NEXT_PUBLIC_DGII_API_URL=https://ecf.dgii.gov.do
 ### 4. Configurar Base de Datos
 
 \`\`\`bash
-# Ejecutar migraciones
+# Ejecutar migraciones (archivos en ./scripts/)
 npm run db:migrate
 
 # Poblar datos iniciales
