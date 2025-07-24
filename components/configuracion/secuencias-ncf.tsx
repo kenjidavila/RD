@@ -67,8 +67,6 @@ export default function SecuenciasNCF() {
       const empresa = await fetchEmpresaConfig()
       if (empresa) {
         setEmpresaRnc(empresa.rnc || "")
-      } else {
-        throw new Error("No se pudo obtener la empresa")
       }
     } catch (error) {
       console.error("Error obteniendo empresa:", error)
