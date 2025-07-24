@@ -26,11 +26,49 @@ interface EmpresaContextValue {
 const EmpresaContext = createContext<EmpresaContextValue | undefined>(undefined)
 
 export function EmpresaProvider({ children }: { children: React.ReactNode }) {
-  const [empresaId, setEmpresaId] = useState<string | null>(null)
-  const [empresa, setEmpresa] = useState<EmpresaProfile | null>(null)
+  const [empresaId, setEmpresaIdState] = useState<string | null>(null)
+  const [empresa, setEmpresaState] = useState<EmpresaProfile | null>(null)
+
+  const setEmpresaId = (id: string | null) => {
+    setEmpresaIdState(id)
+    try {
+      const stored = localStorage.getItem("empresa_profile")
+      if (stored) {
+        const data = JSON.parse(stored)
+        data.id = id
+        localStorage.setItem("empresa_profile", JSON.stringify(data))
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const setEmpresa = (emp: EmpresaProfile | null) => {
+    setEmpresaState(emp)
+    try {
+      if (emp) {
+        localStorage.setItem("empresa_profile", JSON.stringify(emp))
+      } else {
+        localStorage.removeItem("empresa_profile")
+      }
+    } catch {
+      /* ignore */
+    }
+  }
 
   useEffect(() => {
     const loadEmpresa = async () => {
+      try {
+        const stored = localStorage.getItem("empresa_profile")
+        if (stored) {
+          const data = JSON.parse(stored)
+          setEmpresaIdState(data?.id || null)
+          setEmpresaState(data)
+        }
+      } catch {
+        /* ignore */
+      }
+
       try {
         const res = await fetch("/api/empresa")
         if (res.ok) {
