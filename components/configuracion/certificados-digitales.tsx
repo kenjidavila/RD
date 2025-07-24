@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react"
 import { DigitalSignatureService } from "@/lib/digital-signature"
-import { createClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
 import { useEmpresa } from "@/components/empresa-context"
@@ -22,7 +22,7 @@ const CERTS_BUCKET =
   process.env.NEXT_PUBLIC_SUPABASE_CERTS_BUCKET || "certificados"
 
 export default function CertificadosDigitales() {
-  const { empresaId } = useEmpresa()
+  const { empresaId, setEmpresaId } = useEmpresa()
   const { reportError, reportSuccess } = useConfiguracionTabs()
   const [certificados, setCertificados] = useState<CertificadoDigital[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,6 +34,22 @@ export default function CertificadosDigitales() {
 
   const supabase = createClient()
   const { toast } = useToast()
+
+  // Obtener empresaId si no está definido
+  useEffect(() => {
+    if (!empresaId) {
+      fetch("/api/empresa")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.data?.id) {
+            setEmpresaId(data.data.id)
+          }
+        })
+        .catch((err) => {
+          console.error("Error obteniendo empresaId:", err)
+        })
+    }
+  }, [])
 
 
 
@@ -111,11 +127,18 @@ export default function CertificadosDigitales() {
       return false
     }
 
-    // Validar tipo de archivo
+    // Validar tipo y contenido de archivo
     const allowedTypes = [".p12", ".pfx", ".pem", ".crt", ".cer", ".key", ".txt"]
+    const allowedMime = [
+      "application/x-pkcs12",
+      "application/x-x509-ca-cert",
+      "application/x-pem-file",
+      "application/octet-stream",
+      "text/plain",
+    ]
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf("."))
 
-    if (!allowedTypes.includes(fileExtension)) {
+    if (!allowedTypes.includes(fileExtension) || (file.type && !allowedMime.includes(file.type))) {
       setError("Tipo de archivo no válido. Solo se permiten archivos .p12, .pfx, .pem, .crt, .cer, .key o .txt")
       toast({
         title: "Error",
