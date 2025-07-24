@@ -56,6 +56,24 @@ export function EmpresaProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Mantener sincronizado el RNC de la empresa en los datos de usuario
+  useEffect(() => {
+    if (!empresa) return
+    try {
+      const stored = localStorage.getItem("user_data")
+      if (stored) {
+        const data = JSON.parse(stored)
+        if (empresa.rnc && data.rncEmpresa !== empresa.rnc) {
+          data.rncEmpresa = empresa.rnc
+          localStorage.setItem("user_data", JSON.stringify(data))
+          window.dispatchEvent(new Event("userDataUpdated"))
+        }
+      }
+    } catch (err) {
+      console.error("Error actualizando datos de usuario:", err)
+    }
+  }, [empresa])
+
   useEffect(() => {
     const loadEmpresa = async () => {
       try {
