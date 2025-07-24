@@ -11,27 +11,13 @@ import { Loader2, CheckCircle, XCircle, AlertCircle, Plus, Trash2 } from "lucide
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
+import {
+  validarNCF as validarNCFHelper,
+  guardarSecuencias as guardarSecuenciasHelper,
+  actualizarSecuencia as actualizarSecuenciaHelper,
+  type SecuenciaNcf,
+} from "@/hooks/use-secuencias-ncf"
 
-interface SecuenciaNcf {
-  id?: string
-  tipo_comprobante: string
-  prefijo: string
-  secuencia_inicial: string
-  secuencia_final: string
-  secuencia_actual: string
-  fecha_vencimiento: string
-  activa: boolean
-  validacion_inicial?: {
-    valido: boolean
-    mensaje: string
-    estado: "validando" | "valido" | "invalido" | "pendiente"
-  }
-  validacion_final?: {
-    valido: boolean
-    mensaje: string
-    estado: "validando" | "valido" | "invalido" | "pendiente"
-  }
-}
 
 const TIPOS_COMPROBANTE = [
   { value: "31", label: "Factura de Crédito Fiscal" },
@@ -115,100 +101,14 @@ export default function SecuenciasNCF() {
     }
   }
 
-  const validarNCF = async (ncf: string, tipo: string, campo: "inicial" | "final", index: number) => {
-    if (!ncf || ncf.length !== 11) return
-    if (!empresaRnc) {
-      toast({
-        title: "RNC no disponible",
-        description: "Configure el RNC de la empresa antes de validar",
-        variant: "destructive",
-      })
-      return
-    }
+  const validarNCF = (
+    ncf: string,
+    tipo: string,
+    campo: "inicial" | "final",
+    index: number,
+  ) =>
+    validarNCFHelper(ncf, tipo, campo, index, empresaRnc, secuencias, setSecuencias, toast)
 
-    // Actualizar estado a validando
-    setSecuencias((prev) =>
-      prev.map((sec, i) =>
-        i === index
-          ? {
-              ...sec,
-              [`validacion_${campo}`]: {
-                valido: false,
-                mensaje: "Validando...",
-                estado: "validando" as const,
-              },
-            }
-          : sec,
-      ),
-    )
-
-    try {
-      const response = await fetch("/api/dgii/consultar-ncf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ncf: `E${empresaRnc || "000000000"}${tipo}${ncf}`,
-          tipo_comprobante: tipo,
-        }),
-      })
-
-      const result = await response.json()
-
-      setSecuencias((prev) =>
-        prev.map((sec, i) =>
-          i === index
-            ? {
-                ...sec,
-                [`validacion_${campo}`]: {
-                  valido: result.success && result.disponible,
-                  mensaje: result.success
-                    ? result.disponible
-                      ? "NCF disponible para uso"
-                      : "NCF ya utilizado o no disponible"
-                    : result.error || "Error en validación",
-                  estado: result.success
-                    ? result.disponible
-                      ? ("valido" as const)
-                      : ("invalido" as const)
-                    : ("invalido" as const),
-                },
-              }
-            : sec,
-        ),
-      )
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo validar el NCF",
-        variant: "destructive",
-      })
-      setSecuencias((prev) =>
-        prev.map((sec, i) =>
-          i === index
-            ? {
-                ...sec,
-                [`validacion_${campo}`]: {
-                  valido: false,
-                  mensaje: "Validación no disponible",
-                  estado: "pendiente" as const,
-                },
-              }
-            : sec,
-        ),
-      )
-    }
-  }
-
-  const generarSecuenciaActual = (inicial: string, tipo: string) => {
-    if (!inicial || inicial.length !== 8) return ""
-
-    const numero = Number.parseInt(inicial, 10)
-    if (Number.isNaN(numero)) return ""
-
-    return (numero + 1).toString().padStart(8, "0")
-  }
 
   const agregarSecuencia = () => {
     if (
@@ -254,226 +154,23 @@ export default function SecuenciasNCF() {
     setSecuencias(secuencias.filter((_, i) => i !== index))
   }
 
-  const actualizarSecuencia = (index: number, campo: keyof SecuenciaNcf, valor: any) => {
-    if (campo === "tipo_comprobante") {
-      if (secuencias.some((s, i) => i !== index && s.tipo_comprobante === valor)) {
-        toast({
-          title: "Duplicado",
-          description: "Ya existe una secuencia para ese tipo de comprobante",
-          variant: "destructive",
-        })
-        reportError("secuencias")
-        return
-      }
-    }
-    if (campo === "prefijo" && !/^[A-Za-z0-9]*$/.test(valor)) {
-      return
-    }
-    setSecuencias((prev) =>
-      prev.map((sec, i) => {
-        if (i === index) {
-          if (
-            (campo === "secuencia_inicial" || campo === "secuencia_final" || campo === "secuencia_actual") &&
-            !/^\d*$/.test(valor)
-          ) {
-            return sec
-          }
+  const actualizarSecuencia = (
+    index: number,
+    campo: keyof SecuenciaNcf,
+    valor: any,
+  ) =>
+    actualizarSecuenciaHelper(index, campo, valor, secuencias, setSecuencias, toast)
 
-          const updated = { ...sec, [campo]: valor }
-
-          // Auto-generar secuencia actual cuando se actualiza la inicial
-          if (campo === "secuencia_inicial" && valor) {
-            const auto = generarSecuenciaActual(valor, updated.tipo_comprobante)
-            if (
-              !sec.secuencia_actual ||
-              sec.secuencia_actual === generarSecuenciaActual(sec.secuencia_inicial, sec.tipo_comprobante)
-            ) {
-              updated.secuencia_actual = auto
-            }
-          }
-
-          return updated
-        }
-        return sec
-      }),
+  const guardarSecuencias = () =>
+    guardarSecuenciasHelper(
+      secuencias,
+      empresaRnc,
+      toast,
+      reportError,
+      reportSuccess,
+      cargarSecuencias,
+      setSaving,
     )
-  }
-
-  const guardarSecuencias = async () => {
-    if (saving) return
-    setSaving(true)
-    try {
-      if (!empresaRnc) {
-        toast({
-          title: "Empresa no configurada",
-          description: "Debe configurar el RNC de la empresa primero",
-          variant: "destructive",
-        })
-        reportError("secuencias")
-        setSaving(false)
-        return
-      }
-      // Validar duplicados u solapamientos
-      const tipos = new Set<string>()
-      for (let i = 0; i < secuencias.length; i++) {
-        const a = secuencias[i]
-        if (
-          !a.tipo_comprobante.trim() ||
-          !a.prefijo.trim() ||
-          !a.secuencia_inicial.trim() ||
-          !a.secuencia_final.trim() ||
-          !a.fecha_vencimiento.trim()
-        ) {
-          toast({
-            title: "Campos requeridos",
-            description: "Complete todos los campos de cada secuencia",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(a.fecha_vencimiento)) {
-          toast({
-            title: "Fecha inválida",
-            description: "La fecha de vencimiento debe tener formato AAAA-MM-DD",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        if (tipos.has(a.tipo_comprobante)) {
-          toast({
-            title: "Error",
-            description: "Ya existe una secuencia para ese tipo de comprobante",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        tipos.add(a.tipo_comprobante)
-        if (
-          a.validacion_inicial?.estado !== "valido" ||
-          a.validacion_final?.estado !== "valido"
-        ) {
-          toast({
-            title: "Validación pendiente",
-            description: "Todas las secuencias deben validarse correctamente",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        if (secuencias.findIndex((s, idx) => s.tipo_comprobante === a.tipo_comprobante && idx !== i) !== -1) {
-          toast({
-            title: "Error",
-            description: "Ya existe una secuencia para ese tipo de comprobante",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        if (
-          a.secuencia_inicial.length !== 8 ||
-          a.secuencia_final.length !== 8 ||
-          a.secuencia_actual.length !== 8
-        ) {
-          toast({
-            title: "Error",
-            description: "Todas las secuencias deben tener 8 dígitos",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-
-        const startA = parseInt(a.secuencia_inicial, 10)
-        const endA = parseInt(a.secuencia_final, 10)
-        if (Number.isNaN(startA) || Number.isNaN(endA)) {
-          toast({
-            title: "Error",
-            description: "Las secuencias deben ser numéricas",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-
-        if (a.secuencia_inicial.slice(0, 2) !== a.secuencia_final.slice(0, 2)) {
-          toast({
-            title: "Error",
-            description: "Secuencia inicial y final deben pertenecer al mismo tipo",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-
-        if (endA < startA) {
-          toast({
-            title: "Error",
-            description: "La secuencia final debe ser mayor a la inicial",
-            variant: "destructive",
-          })
-          reportError("secuencias")
-          setSaving(false)
-          return
-        }
-        for (let j = i + 1; j < secuencias.length; j++) {
-          const b = secuencias[j]
-          if (a.tipo_comprobante !== b.tipo_comprobante) continue
-          const startB = parseInt(b.secuencia_inicial, 10)
-          const endB = parseInt(b.secuencia_final, 10)
-          if (startA <= endB && startB <= endA) {
-            toast({
-              title: "Error",
-              description: "Hay secuencias duplicadas o solapadas",
-              variant: "destructive",
-            })
-            reportError("secuencias")
-            setSaving(false)
-            return
-          }
-        }
-      }
-
-      const response = await fetch("/api/configuracion/secuencias-ncf", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ secuencias }),
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: "Secuencias NCF guardadas correctamente",
-        })
-        reportSuccess("secuencias")
-        cargarSecuencias()
-      } else {
-        throw new Error("Error al guardar")
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudieron guardar las secuencias NCF",
-        variant: "destructive",
-      })
-      reportError("secuencias")
-    } finally {
-      setSaving(false)
-    }
-  }
 
   const getValidationIcon = (estado: string) => {
     switch (estado) {
@@ -598,7 +295,7 @@ export default function SecuenciasNCF() {
                   value={secuencia.prefijo}
                   onChange={(e) => actualizarSecuencia(index, "prefijo", e.target.value.toUpperCase())}
                   placeholder="B01"
-                  maxLength={5}
+                  maxLength={3}
                 />
               </div>
 

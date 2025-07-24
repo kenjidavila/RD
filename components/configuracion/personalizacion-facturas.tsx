@@ -15,6 +15,11 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Palette, Eye, Save, FileText, Settings, Droplets } from "lucide-react"
 import { useConfiguracionTabs } from "./configuracion-tabs-context"
+import { createClient } from "@/utils/supabase/client"
+import { useEmpresa } from "@/components/empresa-context"
+
+const LOGOS_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_LOGOS_BUCKET || "logos"
 
 interface PersonalizacionConfig {
   // Configuración básica
@@ -56,6 +61,9 @@ interface PersonalizacionConfig {
   layout_espaciadoLineas: "compacto" | "normal" | "amplio"
   layout_mostrarBordes: boolean
   layout_estiloBordes: "simple" | "doble" | "punteado"
+
+  // Logo
+  logo_url?: string
 }
 
 export default function PersonalizacionFacturas() {
@@ -67,6 +75,8 @@ export default function PersonalizacionFacturas() {
   const { toast } = useToast()
   const router = useRouter()
   const { reportError, reportSuccess } = useConfiguracionTabs()
+  const { empresaId } = useEmpresa()
+  const supabase = createClient()
 
   const [formData, setFormData] = useState<PersonalizacionConfig>({
     mostrar_logo: true,
@@ -99,6 +109,7 @@ export default function PersonalizacionFacturas() {
     layout_espaciadoLineas: "normal",
     layout_mostrarBordes: true,
     layout_estiloBordes: "simple",
+    logo_url: "",
   })
 
   useEffect(() => {
@@ -176,7 +187,11 @@ export default function PersonalizacionFacturas() {
           layout_espaciadoLineas: config.layout_espaciadoLineas ?? "normal",
           layout_mostrarBordes: config.layout_mostrarBordes ?? true,
           layout_estiloBordes: config.layout_estiloBordes ?? "simple",
+          logo_url: config.logo_url ?? "",
         })
+        if (config.logo_url) {
+          setLogoPreview(config.logo_url)
+        }
       }
     } catch (error) {
       console.error("Error fetching configuracion:", error)
@@ -227,10 +242,12 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     }
     setLogoFile(file)
     setLogoPreview(URL.createObjectURL(file))
+    setFormData((prev) => ({ ...prev, logo_url: "" }))
   }
 
   const validateFormData = (): string | null => {
     const hexColor = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
+    const allowedFonts = ["helvetica", "arial", "times", "courier", "roboto"]
     if (!formData.color_primario || !formData.color_secundario) {
       return "Debe definir los colores primario y secundario"
     }
@@ -242,6 +259,13 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
     }
     if (!formData.fuentes_encabezado || !formData.fuentes_cuerpo || !formData.fuentes_numeros) {
       return "Debe seleccionar las fuentes a utilizar"
+    }
+    if (
+      !allowedFonts.includes(formData.fuentes_encabezado.toLowerCase()) ||
+      !allowedFonts.includes(formData.fuentes_cuerpo.toLowerCase()) ||
+      !allowedFonts.includes(formData.fuentes_numeros.toLowerCase())
+    ) {
+      return "Las fuentes seleccionadas no son válidas"
     }
     if (formData.mostrar_logo && logoFile && !logoFile.type.startsWith("image/")) {
       return "El logo debe ser un archivo de imagen válido"
@@ -290,11 +314,35 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
 
     try {
 
+      let logoUrl = formData.logo_url || ""
+      if (logoFile) {
+        if (!empresaId) {
+          throw new Error("Empresa no identificada")
+        }
+        const sanitized = logoFile.name.replace(/[^a-zA-Z0-9.\-_]/g, "_")
+        const fileName = `${empresaId}/${Date.now()}-${sanitized}`
+        const { error: uploadError } = await supabase.storage
+          .from(LOGOS_BUCKET)
+          .upload(fileName, logoFile, { upsert: true })
+        if (uploadError) {
+          throw new Error(uploadError.message || "Error al subir logo")
+        }
+        const {
+          data: { publicUrl },
+          error: urlError,
+        } = supabase.storage.from(LOGOS_BUCKET).getPublicUrl(fileName)
+        if (urlError || !publicUrl) {
+          throw urlError || new Error("No se pudo obtener URL del logo")
+        }
+        logoUrl = publicUrl
+      }
+
       const payload = {
         ...formData,
         color_primario: formData.color_primario || "#3B82F6",
         color_secundario: formData.color_secundario || "#1E40AF",
         marca_agua_texto: formData.marca_agua_texto.replace(/<[^>]+>/g, ""),
+        logo_url: logoUrl,
       }
       const response = await fetch("/api/configuracion", {
         method: "POST",
@@ -330,6 +378,12 @@ const handleInputChange = (field: keyof PersonalizacionConfig, value: any) => {
 
       if (!response.ok) {
         throw new Error(result.error || "Error al guardar configuración")
+      }
+
+      setFormData((prev) => ({ ...prev, logo_url: logoUrl }))
+      if (logoFile) {
+        setLogoFile(null)
+        setLogoPreview(logoUrl)
       }
 
       toast({
