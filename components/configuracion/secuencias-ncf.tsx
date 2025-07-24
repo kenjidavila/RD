@@ -17,6 +17,7 @@ import {
   actualizarSecuencia as actualizarSecuenciaHelper,
   type SecuenciaNcf,
 } from "@/hooks/use-secuencias-ncf"
+import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
 
 
 const TIPOS_COMPROBANTE = [
@@ -63,10 +64,9 @@ export default function SecuenciasNCF() {
 
   const fetchEmpresa = async () => {
     try {
-      const res = await fetch("/api/empresa")
-      if (res.ok) {
-        const result = await res.json()
-        setEmpresaRnc(result.data?.rnc || "")
+      const empresa = await fetchEmpresaConfig()
+      if (empresa) {
+        setEmpresaRnc(empresa.rnc || "")
       } else {
         throw new Error("No se pudo obtener la empresa")
       }

@@ -112,38 +112,20 @@ export async function POST(
       );
     }
 
-    let currentEmpresa;
-    try {
-      ({ empresa: currentEmpresa } =
-        await SupabaseServerUtils.getSessionAndEmpresa());
-    } catch (err: any) {
-      if (err.message === "Empresa no encontrada") {
-        currentEmpresa = null;
-      } else {
-        throw err;
-      }
-    }
 
-    let empresa;
-    let error;
-    if (currentEmpresa) {
-      ({ data: empresa, error } = await supabase
-        .from("empresas")
-        .update({
+
+    const { data: empresa, error } = await supabase
+      .from("empresas")
+      .upsert(
+        {
           ...empresaInput,
-          owner_id: ownerRnc,
+          owner_id: user.id,
           updated_at: new Date().toISOString(),
-        })
-        .eq("id", currentEmpresa.id)
-        .select()
-        .single());
-    } else {
-      ({ data: empresa, error } = await supabase
-        .from("empresas")
-        .insert({ ...empresaInput, owner_id: ownerRnc })
-        .select()
-        .single());
-    }
+        },
+        { onConflict: ["owner_id"] },
+      )
+      .select()
+      .single();
 
     if (error) throw error;
 

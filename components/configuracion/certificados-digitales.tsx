@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Trash2, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react"
 import { DigitalSignatureService } from "@/lib/digital-signature"
 import { createClient } from "@/utils/supabase/client"
+import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
 import { logger } from "@/lib/logger"
 import type { CertificadoDigital } from "@/types/database"
 import { useEmpresa } from "@/components/empresa-context"
@@ -38,11 +39,10 @@ export default function CertificadosDigitales() {
   // Obtener empresaId si no está definido
   useEffect(() => {
     if (!empresaId) {
-      fetch("/api/empresa")
-        .then((res) => (res.ok ? res.json() : null))
+      fetchEmpresaConfig()
         .then((data) => {
-          if (data?.data?.id) {
-            setEmpresaId(data.data.id)
+          if (data?.id) {
+            setEmpresaId(data.id)
           }
         })
         .catch((err) => {
