@@ -38,10 +38,9 @@ export class DGIICatalogsService {
   // Provincias
   static async getProvincias(): Promise<Provincia[]> {
     const { data, error } = await supabase
-      .from("provincias")
-      .select("*")
-      .eq("activa", true)
-      .order("nombre")
+      .from("dgii_catalogo_provincias_municipios")
+      .select("codigo_provincia, nombre_provincia")
+      .order("nombre_provincia")
 
     if (error || !data || data.length === 0) {
       if (error) {
@@ -51,32 +50,44 @@ export class DGIICatalogsService {
       return provinciasFallback as Provincia[]
     }
 
-    return data
+    const provinciasMap = new Map<string, Provincia>()
+    for (const p of data) {
+      provinciasMap.set(p.codigo_provincia, {
+        codigo: p.codigo_provincia,
+        nombre: p.nombre_provincia,
+        activa: true,
+      })
+    }
+    return Array.from(provinciasMap.values())
   }
 
   static async getProvinciaByCode(codigo: string): Promise<Provincia | null> {
     const { data, error } = await supabase
-      .from("provincias")
-      .select("*")
-      .eq("codigo", codigo)
-      .eq("activa", true)
-      .single()
+      .from("dgii_catalogo_provincias_municipios")
+      .select("codigo_provincia, nombre_provincia")
+      .eq("codigo_provincia", codigo)
+      .order("nombre_provincia")
+      .maybeSingle()
 
     if (error) {
       console.error("Error fetching provincia:", error)
       return null
     }
 
-    return data
+    if (!data) return null
+    return {
+      codigo: data.codigo_provincia,
+      nombre: data.nombre_provincia,
+      activa: true,
+    }
   }
 
   // Municipios
   static async getMunicipios(): Promise<Municipio[]> {
     const { data, error } = await supabase
-      .from("municipios")
-      .select("*")
-      .eq("activa", true)
-      .order("nombre")
+      .from("dgii_catalogo_provincias_municipios")
+      .select("codigo_municipio, codigo_provincia, nombre_municipio")
+      .order("nombre_municipio")
 
     if (error || !data || data.length === 0) {
       if (error) {
@@ -85,16 +96,20 @@ export class DGIICatalogsService {
       return municipiosFallback as Municipio[]
     }
 
-    return data
+    return data.map((m) => ({
+      codigo: m.codigo_municipio,
+      provincia_codigo: m.codigo_provincia,
+      nombre: m.nombre_municipio,
+      activa: true,
+    }))
   }
 
   static async getMunicipiosByProvincia(provinciaCodigo: string): Promise<Municipio[]> {
     const { data, error } = await supabase
-      .from("municipios")
-      .select("*")
-      .eq("provincia_codigo", provinciaCodigo)
-      .eq("activa", true)
-      .order("nombre")
+      .from("dgii_catalogo_provincias_municipios")
+      .select("codigo_municipio, codigo_provincia, nombre_municipio")
+      .eq("codigo_provincia", provinciaCodigo)
+      .order("nombre_municipio")
 
     if (error || !data || data.length === 0) {
       if (error) {
@@ -105,16 +120,20 @@ export class DGIICatalogsService {
       )
     }
 
-    return data
+    return data.map((m) => ({
+      codigo: m.codigo_municipio,
+      provincia_codigo: m.codigo_provincia,
+      nombre: m.nombre_municipio,
+      activa: true,
+    }))
   }
 
   static async getMunicipioByCode(codigo: string): Promise<Municipio | null> {
     const { data, error } = await supabase
-      .from("municipios")
-      .select("*")
-      .eq("codigo", codigo)
-      .eq("activa", true)
-      .single()
+      .from("dgii_catalogo_provincias_municipios")
+      .select("codigo_municipio, codigo_provincia, nombre_municipio")
+      .eq("codigo_municipio", codigo)
+      .maybeSingle()
 
     if (error || !data) {
       if (error) {
@@ -126,7 +145,12 @@ export class DGIICatalogsService {
       )
     }
 
-    return data
+    return {
+      codigo: data.codigo_municipio,
+      provincia_codigo: data.codigo_provincia,
+      nombre: data.nombre_municipio,
+      activa: true,
+    }
   }
 
   // Unidades de medida
