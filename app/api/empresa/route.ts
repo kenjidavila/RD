@@ -83,6 +83,7 @@ export async function POST(
             auth_user_id: user.id,
             nombre: user.user_metadata?.nombre || "",
             email: user.email,
+            password_hash: "supabase_auth",
             rnc_cedula: body.rnc,
             rol: "administrador",
             activo: true,
