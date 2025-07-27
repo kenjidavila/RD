@@ -74,20 +74,23 @@ export async function POST(
     let usuarioId = usuario?.id;
 
     if (!usuario) {
-      // Si no existe el registro de usuario se crea con la información disponible
+      // Crear registro de usuario si no existe o actualizar datos básicos
       const { data: newUser, error: newUserError } = await supabase
         .from("usuarios")
-        .insert({
-          // @ts-ignore - columnas adicionales no definidas en tipos
-          auth_user_id: user.id,
-          nombre: user.user_metadata?.nombre || "",
-          email: user.email,
-          rnc_cedula: body.rnc,
-          rol: "administrador",
-          activo: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .upsert(
+          {
+            // @ts-ignore - columnas adicionales no definidas en tipos
+            auth_user_id: user.id,
+            nombre: user.user_metadata?.nombre || "",
+            email: user.email,
+            rnc_cedula: body.rnc,
+            rol: "administrador",
+            activo: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: ["auth_user_id"] },
+        )
         .select("id, rnc_cedula")
         .single();
 
