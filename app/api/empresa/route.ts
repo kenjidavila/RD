@@ -89,7 +89,7 @@ export async function POST(
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-          { onConflict: ["auth_user_id"] },
+          { onConflict: ["auth_user_id", "email"] },
         )
         .select("id, rnc_cedula")
         .single();
