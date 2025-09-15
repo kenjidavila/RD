@@ -498,6 +498,7 @@ export interface Database {
           direccion: string | null
           provincia: string | null
           municipio: string | null
+          owner_id: string | null
           activa: boolean
           created_at: string
           updated_at: string
@@ -512,6 +513,7 @@ export interface Database {
           direccion?: string | null
           provincia?: string | null
           municipio?: string | null
+          owner_id?: string | null
           activa?: boolean
           created_at?: string
           updated_at?: string
@@ -526,6 +528,7 @@ export interface Database {
           direccion?: string | null
           provincia?: string | null
           municipio?: string | null
+          owner_id?: string | null
           activa?: boolean
           created_at?: string
           updated_at?: string
