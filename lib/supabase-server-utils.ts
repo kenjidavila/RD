@@ -42,11 +42,13 @@ export class SupabaseServerUtils {
       return usuario.empresas
     }
 
+    const ownerRnc = usuario?.rnc_cedula?.trim() || ""
+
     // Buscar empresa por owner_id usando el RNC del usuario
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("*")
-      .eq("owner_id", usuario?.rnc_cedula || "")
+      .eq("owner_id", ownerRnc)
       .maybeSingle()
 
     if (empresaError || !empresa) {
@@ -83,11 +85,13 @@ export class SupabaseServerUtils {
       }
     }
 
+    const ownerRnc = usuario?.rnc_cedula?.trim() || ""
+
     // Fallback: buscar empresa por owner_id usando el RNC del usuario
     const { data: empresa, error: empresaError } = await supabase
       .from("empresas")
       .select("*")
-      .eq("owner_id", usuario?.rnc_cedula || "")
+      .eq("owner_id", ownerRnc)
       .maybeSingle()
 
     if (empresaError || !empresa) {

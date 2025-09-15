@@ -13,10 +13,30 @@ export async function fetchEmpresaConfig(): Promise<EmpresaConfig | null> {
     return null
   }
 
+  const { data: usuario, error: usuarioError } = await supabase
+    .from("usuarios")
+    .select("empresa_id, rnc_cedula, empresas(*)")
+    .eq("auth_user_id", user.id)
+    .maybeSingle()
+
+  if (usuarioError) {
+    console.error("Error obteniendo datos de usuario", usuarioError)
+  }
+
+  if (usuario?.empresas) {
+    return usuario.empresas as EmpresaConfig
+  }
+
+  const ownerRnc = usuario?.rnc_cedula?.trim()
+
+  if (!ownerRnc) {
+    return null
+  }
+
   const { data, error } = await supabase
     .from("empresas")
     .select("*")
-    .eq("owner_id", user.id)
+    .eq("owner_id", ownerRnc)
     .maybeSingle()
 
   if (error) {
@@ -34,10 +54,16 @@ export async function upsertEmpresaConfig(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error("Usuario no autenticado")
 
+  const ownerId = empresa.rnc.trim()
+
   const { data, error } = await supabase
     .from("empresas")
     .upsert(
-      { ...empresa, owner_id: user.id, updated_at: new Date().toISOString() },
+      {
+        ...empresa,
+        owner_id: ownerId,
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: ["owner_id"] },
     )
     .select()

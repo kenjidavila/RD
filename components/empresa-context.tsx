@@ -7,6 +7,7 @@ export interface EmpresaProfile {
   razon_social: string
   nombre_comercial?: string
   rnc: string
+  owner_id?: string | null
   direccion?: string
   telefono?: string
   email?: string

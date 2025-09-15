@@ -70,7 +70,7 @@ export async function POST(
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    let ownerRnc = usuario?.rnc_cedula;
+    let ownerRnc = usuario?.rnc_cedula?.trim();
     let usuarioId = usuario?.id;
 
     if (!usuario) {
@@ -84,7 +84,7 @@ export async function POST(
             nombre: user.user_metadata?.nombre || "",
             email: user.email,
             password_hash: "supabase_auth",
-            rnc_cedula: body.rnc,
+            rnc_cedula: empresaInput.rnc,
             rol: "administrador",
             activo: true,
             created_at: new Date().toISOString(),
@@ -105,11 +105,13 @@ export async function POST(
         );
       }
 
-      ownerRnc = newUser.rnc_cedula;
+      ownerRnc = newUser.rnc_cedula?.trim();
       usuarioId = newUser.id;
     }
 
-    if (!ownerRnc) {
+    const normalizedOwnerId = ownerRnc || empresaInput.rnc;
+
+    if (!normalizedOwnerId) {
       return NextResponse.json(
         { success: false, error: "RNC no encontrado para el usuario" },
         { status: 400 },
@@ -123,7 +125,7 @@ export async function POST(
       .upsert(
         {
           ...empresaInput,
-          owner_id: user.id,
+          owner_id: normalizedOwnerId,
           updated_at: new Date().toISOString(),
         },
         { onConflict: ["owner_id"] },

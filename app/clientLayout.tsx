@@ -8,6 +8,7 @@ import Header from "@/components/layout/header"
 import MobileNavigation from "@/components/layout/mobile-navigation"
 import { createClient } from "@/utils/supabase/client"
 import { fetchEmpresaConfig } from "@/lib/helpers/empresa-config"
+import { Toaster } from "@/components/ui/toaster"
 
 interface UserData {
   id: string
@@ -109,7 +110,12 @@ export default function ClientLayout({
 
   // Si es página de auth, mostrar sin layout
   if (isAuthPage) {
-    return <>{children}</>
+    return (
+      <>
+        {children}
+        <Toaster />
+      </>
+    )
   }
 
   // Si no está autenticado, no mostrar nada (ya se redirigió)
@@ -137,6 +143,7 @@ export default function ClientLayout({
 
       {/* Mobile Navigation */}
       <MobileNavigation />
+      <Toaster />
     </div>
   )
 }

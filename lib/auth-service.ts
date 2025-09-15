@@ -148,11 +148,13 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
 
     authLogger.info(`Usuario creado en Auth: ${authData.user.id}`)
 
-    // 3. Crear empresa con owner_id (CLAVE: esto resuelve el problema RLS)
-    authLogger.info(`Creando empresa con owner_id: ${authData.user.id}`)
+    const empresaRnc = data.empresa_rnc.trim()
+
+    // 3. Crear empresa con owner_id usando el RNC del propietario
+    authLogger.info(`Creando empresa con owner_id (RNC): ${empresaRnc}`)
 
     const empresaData = {
-      rnc: data.empresa_rnc,
+      rnc: empresaRnc,
       razon_social: data.empresa_razon_social,
       nombre_comercial: data.empresa_nombre_comercial || null,
       email: data.empresa_email,
@@ -160,7 +162,7 @@ export async function registrarEmpresa(data: RegistroEmpresaData): Promise<Regis
       direccion: data.empresa_direccion || null,
       provincia: data.empresa_provincia || null,
       municipio: data.empresa_municipio || null,
-      owner_id: authData.user.id,
+      owner_id: empresaRnc,
       activa: true,
       fecha_registro: new Date().toISOString(),
       fecha_actualizacion: new Date().toISOString(),
