@@ -189,7 +189,7 @@ export default function PerfilEmpresa() {
     if (!/^\d{9,11}$/.test(rnc)) {
       toast({
         title: "RNC inválido",
-        description: "El RNC debe contener solo números",
+        description: "El RNC debe contener solo números y debe ser de 9 a 11 dígitos",
         variant: "destructive",
       })
       reportError("perfil")
