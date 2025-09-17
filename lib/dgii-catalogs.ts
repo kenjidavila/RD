@@ -1,6 +1,4 @@
 import { supabase } from "./supabase"
-import provinciasFallback from "@/public/data/provincias.json"
-import municipiosFallback from "@/public/data/municipios.json"
 
 export interface Provincia {
   codigo: string
@@ -42,12 +40,13 @@ export class DGIICatalogsService {
       .select("codigo_provincia, nombre_provincia")
       .order("nombre_provincia")
 
-    if (error || !data || data.length === 0) {
-      if (error) {
-        console.error("Error fetching provincias:", error)
-      }
-      // Fallback a datos estáticos cuando la consulta falla o no retorna datos
-      return provinciasFallback as Provincia[]
+    if (error) {
+      console.error("Error fetching provincias:", error)
+      return []
+    }
+
+    if (!data || data.length === 0) {
+      return []
     }
 
     const provinciasMap = new Map<string, Provincia>()
@@ -89,11 +88,13 @@ export class DGIICatalogsService {
       .select("codigo_municipio, codigo_provincia, nombre_municipio")
       .order("nombre_municipio")
 
-    if (error || !data || data.length === 0) {
-      if (error) {
-        console.error("Error fetching municipios:", error)
-      }
-      return municipiosFallback as Municipio[]
+    if (error) {
+      console.error("Error fetching municipios:", error)
+      return []
+    }
+
+    if (!data || data.length === 0) {
+      return []
     }
 
     return data.map((m) => ({
@@ -111,13 +112,13 @@ export class DGIICatalogsService {
       .eq("codigo_provincia", provinciaCodigo)
       .order("nombre_municipio")
 
-    if (error || !data || data.length === 0) {
-      if (error) {
-        console.error("Error fetching municipios by provincia:", error)
-      }
-      return (municipiosFallback as Municipio[]).filter(
-        (m) => m.provincia_codigo === provinciaCodigo,
-      )
+    if (error) {
+      console.error("Error fetching municipios by provincia:", error)
+      return []
+    }
+
+    if (!data || data.length === 0) {
+      return []
     }
 
     return data.map((m) => ({
@@ -135,14 +136,13 @@ export class DGIICatalogsService {
       .eq("codigo_municipio", codigo)
       .maybeSingle()
 
-    if (error || !data) {
-      if (error) {
-        console.error("Error fetching municipio:", error)
-      }
-      return (
-        (municipiosFallback as Municipio[]).find((m) => m.codigo === codigo) ||
-        null
-      )
+    if (error) {
+      console.error("Error fetching municipio:", error)
+      return null
+    }
+
+    if (!data) {
+      return null
     }
 
     return {
